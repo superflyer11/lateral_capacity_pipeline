@@ -36,7 +36,6 @@ class BoundaryCondition(BaseModel):
     add: str
 
 class NodeBoundaryCondition(BoundaryCondition):
-    add: str = "NODESET"
     disp_flag1: float = 0
     disp_ux: float = 0
     disp_flag2: float = 0
@@ -45,7 +44,6 @@ class NodeBoundaryCondition(BoundaryCondition):
     disp_uz: float = 0
 
 class EdgeBoundaryCondition(BoundaryCondition):
-    add: str = "SIDESET"
     disp_flag1: float = 0
     disp_ux: float = 0
     disp_flag2: float = 0
@@ -54,7 +52,6 @@ class EdgeBoundaryCondition(BoundaryCondition):
     disp_uz: float = 0
 
 class SurfaceBoundaryCondition(BoundaryCondition):
-    add: str = "SIDESET"
     disp_flag1: float = 0
     disp_ux: float = 0
     disp_flag2: float = 0
@@ -86,16 +83,17 @@ class SoilLayer(BaseModel):
     depth: float
     elastic_properties: ElasticProperties
 
+#todo: update class name to show it is a BC block
 class CFGBLOCK(BaseModel):
     name: str
     number_of_attributes: int
-    user_attributes: list
+    # user_attributes: list
 
-    @model_validator(mode='after')
-    def validate_number_of_attributes(self) -> Self:
-        if self.number_of_attributes != len(self.user_attributes):
-            raise ValueError(f'Expected {self.number_of_attributes} attributes, got {len(self.user_attributes)}')
-        return self
+    # @model_validator(mode='after')
+    # def validate_number_of_attributes(self) -> Self:
+    #     if self.number_of_attributes != len(self.user_attributes):
+    #         raise ValueError(f'Expected {self.number_of_attributes} attributes, got {len(self.user_attributes)}')
+    #     return self
     
     def formatted(self):
         attrs = ''
@@ -105,6 +103,7 @@ class CFGBLOCK(BaseModel):
 number_of_attributes={self.number_of_attributes}\n""" + attrs
         return block
     
+#todo: update class name to show it is a mfront material block
 class CFGBLOCK2(BaseModel):
     name: str
     comment: str
