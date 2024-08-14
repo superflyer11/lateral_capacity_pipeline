@@ -32,32 +32,21 @@ class BoundaryCondition(BaseModel):
     pass
 
 class NodeBoundaryCondition(BoundaryCondition):
-    disp_flag1: float = 0
     disp_ux: float = 0
-    disp_flag2: float = 0
     disp_uy: float = 0
     disp_flag3: float = 0
-    disp_uz: float = 0
 
 class EdgeBoundaryCondition(BoundaryCondition):
-    disp_flag1: float = 0
     disp_ux: float = 0
-    disp_flag2: float = 0
     disp_uy: float = 0
-    disp_flag3: float = 0
     disp_uz: float = 0
 
 class SurfaceBoundaryCondition(BoundaryCondition):
-    disp_flag1: float = 0
     disp_ux: float = 0
-    disp_flag2: float = 0
     disp_uy: float = 0
-    disp_flag3: float = 0
     disp_uz: float = 0
-    pressure_flag2: float = 0
-    pressure_magnitude: float = 0
     
-class Force(BoundaryCondition):
+class ForceBoundaryCondition(BoundaryCondition):
     fx: int = 0
     fy: int = 0
     fz: int = 0
@@ -85,7 +74,7 @@ class CamClayProperties(MaterialProperty):
     v0: float = 0
     la: float = 0
     ka: float = 0
-    G_0*: float = 0
+    G_0: float = 0
     a: float = 0
     b: float = 0
     RG_min: float = 0
@@ -98,30 +87,32 @@ class SoilLayer(BaseModel):
 
 #todo: update class name to show it is a BC block
 class CFGBLOCK(BaseModel):
-    name: str
-    # number_of_attributes: int
-    user_attributes: list
+    block_name: str
+    comment: str
+    attributes: list
+    id: int
 
     @property
-    def number_of_attributes(self) -> int
-        return len(self.user_attributes)
+    def number_of_attributes(self) -> int:
+        return len(self.attributes)
     
     def formatted(self):
         attrs = ''
-        for i in range(len(self.user_attributes)):
-            attrs += f'user{i+1}={self.user_attributes[i]}\n'       
-        block = f"""[{self.name}]
+        for i in range(len(self.attributes)):
+            attrs += f'user{i+1}={self.attributes[i]}\n'       
+        block = f"""[{self.block_name}]
+# {self.comment}
 number_of_attributes={self.number_of_attributes}\n""" + attrs
         return block
     
 #todo: update class name to show it is a mfront material block
 class CFGBLOCK2(BaseModel):
-    name: str
+    block_name: str
     comment: str
     id: int
     
     def formatted(self):
-        block = f"""[MFRONT_MAT_{self.id}]
+        block = f"""[{self.block_name}]
 # {self.comment}
 id={self.id}
 add=BLOCKSET
@@ -164,31 +155,31 @@ class BoxManager(BaseModel):
 
     @property
     def max_z(self) -> float:
-        return self.max_z
+        return self.z
     
     @property
     def near_field_min_x(self) -> float:
-        return (self.min_x + self.max_x) / 2 - near_field_dist
+        return (self.min_x + self.max_x) / 2 - self.near_field_dist
     
     @property
     def near_field_min_y(self) -> float:
-        return (self.min_y + self.max_y) / 2 - near_field_dist
+        return (self.min_y + self.max_y) / 2 - self.near_field_dist
 
     @property
     def near_field_min_z(self) -> float:
-        return (self.min_z + self.max_z) / 2 - near_field_dist
+        return (self.min_z + self.max_z) / 2 - self.near_field_dist
 
     @property
     def near_field_max_x(self) -> float:
-        return (self.min_x + self.max_x) / 2 + near_field_dist
+        return (self.min_x + self.max_x) / 2 + self.near_field_dist
     
     @property
     def near_field_max_y(self) -> float:
-        return (self.min_y + self.max_y) / 2 + near_field_dist
+        return (self.min_y + self.max_y) / 2 + self.near_field_dist
 
     @property
     def near_field_max_z(self) -> float:
-        return (self.min_z + self.max_z) / 2 + near_field_dist
+        return (self.min_z + self.max_z) / 2 + self.near_field_dist
     
     def add_layer(self, box: BoxLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.dz)
@@ -199,9 +190,9 @@ class BoxManager(BaseModel):
         blocks = []
         for i in range(1, len(self.layers) + 1):
             block = CFGBLOCK(
-                name=f'SET_ATTR_MAT_SOIL_LAYER{i}', 
+                name=f'SOIL_LAYER_{i}', 
                 number_of_attributes=2, 
-                user_attributes=[
+                attributes=[
                 self.layers[i].elastic_properties.youngs_modulus,
                 self.layers[i].elastic_properties.poisson_ratio,
             ])
@@ -226,9 +217,9 @@ class PileManager(BaseModel):
     
     def create_CFGBLOCK(self) -> CFGBLOCK:
         block = CFGBLOCK(
-            name=f'SET_ATTR_MAT_ELASTIC_CYLINDER', 
+            name=f'CYLINDER', 
             number_of_attributes=2, 
-            user_attributes=[
+            attributes=[
             self.elastic_properties.youngs_modulus,
             self.elastic_properties.poisson_ratio,
         ])

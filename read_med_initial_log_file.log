@@ -1,0 +1,26 @@
+[0] <inform> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[0] <inform> git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[0] <inform> Local time: 2024-8-14 19:48:0
+[0] <inform> UTC time: 2024-8-14 19:48:0
+[0] <inform> [MED] Reading MED file V4.1.0 using MED library V4.1.0
+[0] <inform> [MED] Check mesh test_env nsteps 1
+[0] <inform> [MED] Reading mesh test_env nsteps 1
+[0] <inform> [MED] Read number of nodes 9210
+[0] <inform> [MED] Reading elements 4185 of type Tri number of nodes 3
+[0] <inform> [MED] Reading elements 42310 of type Tet number of nodes 4
+[0] <inform> [read_med] Print all meshsets (old and added from meshsets configurational file)
+[0] <inform> [read_med] meshset 12682136550675316737 type BLOCKSET UNKNOWNNAME msId 1 name test_env
+[0] <inform> [read_med] meshset 12682136550675316738 type BLOCKSET UNKNOWNNAME msId 2 name CYLINDER                       
+[0] <inform> [read_med] meshset 12682136550675316739 type BLOCKSET UNKNOWNNAME msId 3 name FIX_ALL                        
+[0] <inform> [read_med] meshset 12682136550675316740 type BLOCKSET UNKNOWNNAME msId 4 name FIX_X_0                        
+[0] <inform> [read_med] meshset 12682136550675316741 type BLOCKSET UNKNOWNNAME msId 5 name FIX_Y_0                        
+[0] <inform> [read_med] meshset 12682136550675316742 type BLOCKSET UNKNOWNNAME msId 6 name FIX_Z_0                        
+[0] <inform> [read_med] meshset 12682136550675316743 type BLOCKSET UNKNOWNNAME msId 7 name FORCE                          
+[0] <inform> [read_med] meshset 12682136550675316744 type BLOCKSET UNKNOWNNAME msId 8 name MFRONT_MAT_12                  
+[0] <inform> [read_med] meshset 12682136550675316745 type BLOCKSET UNKNOWNNAME msId 9 name MFRONT_MAT_13                  
+[0] <inform> [read_med] meshset 12682136550675316746 type BLOCKSET UNKNOWNNAME msId 10 name MFRONT_MAT_14                  
+[0] <inform> [read_med] meshset 12682136550675316747 type BLOCKSET UNKNOWNNAME msId 11 name MFRONT_MAT_15                  
+[0] <inform> [read_med] meshset 12682136550675316748 type BLOCKSET UNKNOWNNAME msId 12 name cascade_test_1                 
+[0] <inform> [read_med] meshset 12682136550675316749 type BLOCKSET UNKNOWNNAME msId 13 name cascade_test_2                 
+[0] <inform> [read_med] meshset 12682136550675316750 type BLOCKSET UNKNOWNNAME msId 14 name cascade_test_3                 
+[0] <inform> [read_med] meshset 12682136550675316751 type BLOCKSET UNKNOWNNAME msId 15 name cascade_test_4                 

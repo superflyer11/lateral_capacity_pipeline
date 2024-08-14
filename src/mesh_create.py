@@ -219,13 +219,25 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     physical_groups = []
 
     for i in range(1, 5):
+        # if i == 1:
+        #     mfront_block_id = 10
+        # elif i == 2:
+        #     mfront_block_id = 11
+        # elif i == 3:
+        #     mfront_block_id = 8
+        # elif i == 4:
+        #     mfront_block_id = 9
         physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER_1",
+            dim=3, tags=[geo.soil_volumes[i-1]], name=f"cascade_test_{i}",
+            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
+        ))
+        physical_groups.append(cm.PhysicalGroup(
+            dim=3, tags=[geo.soil_volumes[i-1]], name=f"MFRONT_MAT_{i+11}",
             group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
         ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.pile_volumes, name="CYLINDER",
-        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.elastic_properties}
+        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.elastic_properties},gmsh_tag=5,
     ))
 
     # Adding boundary condition physical groups
@@ -248,8 +260,8 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     
 
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FIX_X_1",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(f)
+        dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FORCE",
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.ForceBoundaryCondition(fx=100000,),
     ))  # TOP FACE OF PILE
     # Adding physical groups to Gmsh model
     physical_group_dimtag = {}
@@ -257,7 +269,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         physical_group_dimtag[group.name] = (group.dim, gmsh.model.addPhysicalGroup(
             dim=group.dim,
             tags=group.tags,
-            name=group.name
+            name=group.name,
         ))
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.min_x, params.box_manager.min_y, params.box_manager.min_z, params.box_manager.max_x, params.box_manager.max_y, params.box_manager.max_z), params.box_manager.far_field_size)
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
@@ -324,18 +336,17 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
     for i in range(len(physical_groups)):
         if physical_groups[i].group_type == cm.PhysicalGroupType.BOUNDARY_CONDITION:
             print(physical_groups[i].bc.dict())
-            blocks.append(cm.CFGBLOCK2(
-                name = f"block_{physical_groups[i].meshnet_id}",
+            blocks.append(cm.CFGBLOCK(
+                block_name = f"SET_ATTR_{physical_groups[i].name}",
                 comment = f"Boundary condition for {physical_groups[i].name}",
                 id = physical_groups[i].meshnet_id,
-                attributes = physical_groups[i].bc.dict(),
+                attributes = list(physical_groups[i].bc.dict().values()),
             ))
         elif physical_groups[i].group_type == cm.PhysicalGroupType.MATERIAL:
             blocks.append(cm.CFGBLOCK2(
-                name = f"block_{physical_groups[i].meshnet_id}",
+                block_name = f"block_{physical_groups[i].meshnet_id}",
                 comment = f"Material properties for {physical_groups[i].name}",
                 id = physical_groups[i].meshnet_id,
-                # attributes = physical_groups[i].props[mode].dict(),
             ))
         
 
