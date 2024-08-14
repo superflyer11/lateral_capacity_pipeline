@@ -45,8 +45,6 @@ class AttrDict():
         if attr in self:
             return self[attr]
         raise AttributeError(f"Attribute {attr} not found")
-params = AttrDict()
-mode = cm.PropertyTypeEnum.elastic
 
 
 
@@ -71,8 +69,7 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     soil_layer_tags = []
     # Add boxes for the layers
     for no, layer in params.box_manager.layers.items():
-        soil_box = cm.BoxLayer(dz=layer.depth)
-        new_tag = params.box_manager.add_layer(soil_box)
+        new_tag = params.box_manager.add_layer(layer)
         soil_layer_tags.append(new_tag)
 
     
@@ -231,10 +228,10 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
             dim=3, tags=[geo.soil_volumes[i-1]], name=f"cascade_test_{i}",
             group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
         ))
-        physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i-1]], name=f"MFRONT_MAT_{i+11}",
-            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
-        ))
+        # physical_groups.append(cm.PhysicalGroup(
+        #     dim=3, tags=[geo.soil_volumes[i-1]], name=f"MFRONT_MAT_{i+11}",
+        #     group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
+        # ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.pile_volumes, name="CYLINDER",
         group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.elastic_properties},gmsh_tag=5,
@@ -332,18 +329,18 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
 
 @ut.track_time("GENERATING CONFIG FILES")
 def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
-    blocks: list[cm.CFGBLOCK2] = []
+    blocks: list[cm.MFRONT_CONFIG_BLOCK] = []
     for i in range(len(physical_groups)):
         if physical_groups[i].group_type == cm.PhysicalGroupType.BOUNDARY_CONDITION:
             print(physical_groups[i].bc.dict())
-            blocks.append(cm.CFGBLOCK(
+            blocks.append(cm.BC_CONFIG_BLOCK(
                 block_name = f"SET_ATTR_{physical_groups[i].name}",
                 comment = f"Boundary condition for {physical_groups[i].name}",
                 id = physical_groups[i].meshnet_id,
                 attributes = list(physical_groups[i].bc.dict().values()),
             ))
         elif physical_groups[i].group_type == cm.PhysicalGroupType.MATERIAL:
-            blocks.append(cm.CFGBLOCK2(
+            blocks.append(cm.MFRONT_CONFIG_BLOCK(
                 block_name = f"block_{physical_groups[i].meshnet_id}",
                 comment = f"Material properties for {physical_groups[i].name}",
                 id = physical_groups[i].meshnet_id,
@@ -480,6 +477,7 @@ def partition_mesh(params):
 def test():
     print('Hello world!')
 # if __name__ == "__main__":
+#     params = AttrDict()
 #     ############################################################################################################
 #     # GENERATING MESH FILES
 #     ############################################################################################################

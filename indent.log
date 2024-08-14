@@ -1,37 +1,33 @@
 [0] <inform> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
 [0] <inform> git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
-[0] <inform> Local time: 2024-8-14 19:48:7
-[0] <inform> UTC time: 2024-8-14 19:48:7
+[0] <inform> Local time: 2024-8-14 19:57:4
+[0] <inform> UTC time: 2024-8-14 19:57:4
 [0] <warning> [MeshsetMng] broadcasted vertex 1289 has negative id
 [0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316738 type BLOCKSET UNKNOWNNAME msId 1 name test_env
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316758 type BLOCKSET UNKNOWNNAME msId 2 name CYLINDER                       
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316760 type BLOCKSET UNKNOWNNAME msId 3 name FIX_ALL                        
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316754 type BLOCKSET UNKNOWNNAME msId 2 name CYLINDER                       
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316756 type BLOCKSET UNKNOWNNAME msId 3 name FIX_ALL                        
 [0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316739 type BLOCKSET UNKNOWNNAME msId 4 name FIX_X_0                        
 [0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316740 type BLOCKSET UNKNOWNNAME msId 5 name FIX_Y_0                        
 [0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316741 type BLOCKSET UNKNOWNNAME msId 6 name FIX_Z_0                        
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316759 type BLOCKSET UNKNOWNNAME msId 7 name FORCE                          
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316742 type BLOCKSET UNKNOWNNAME msId 8 name MFRONT_MAT_12                  
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316743 type BLOCKSET UNKNOWNNAME msId 9 name MFRONT_MAT_13                  
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316744 type BLOCKSET UNKNOWNNAME msId 10 name MFRONT_MAT_14                  
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316745 type BLOCKSET UNKNOWNNAME msId 11 name MFRONT_MAT_15                  
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316746 type BLOCKSET UNKNOWNNAME msId 12 name cascade_test_1                 
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316747 type BLOCKSET UNKNOWNNAME msId 13 name cascade_test_2                 
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316748 type BLOCKSET UNKNOWNNAME msId 14 name cascade_test_3                 
-[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316749 type BLOCKSET UNKNOWNNAME msId 15 name cascade_test_4                 
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316755 type BLOCKSET UNKNOWNNAME msId 7 name FORCE                          
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316742 type BLOCKSET UNKNOWNNAME msId 8 name cascade_test_1                 
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316743 type BLOCKSET UNKNOWNNAME msId 9 name cascade_test_2                 
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316744 type BLOCKSET UNKNOWNNAME msId 10 name cascade_test_3                 
+[0] <inform> [MeshsetMng] meshset in database meshset 12682136550675316745 type BLOCKSET UNKNOWNNAME msId 11 name cascade_test_4                 
 [0] <inform> [Indent] Order 2
 [0] <inform> [Indent] Contact order 0
 [0] <inform> [Indent] Sigma order 0
 [0] <inform> [Indent] Geom order 1
 [0] <inform> [Indent] Set AINSWORTH_LEGENDRE_BASE for displacements
-[0] <inform> [FieldCore] Add field U field_id 1 space H1 field continuity CONTINUOUS approximation base AINSWORTH_LEGENDRE_BASE nb coefficients 3 meshset 12682136550675316763
-[0] <inform> [FieldCore] Add field SIGMA field_id 2 space HDIV field continuity CONTINUOUS approximation base DEMKOWICZ_JACOBI_BASE nb coefficients 3 meshset 12682136550675316764
-[0] <inform> [FieldCore] Add field GEOMETRY field_id 4 space H1 field continuity CONTINUOUS approximation base AINSWORTH_LEGENDRE_BASE nb coefficients 3 meshset 12682136550675316765
+[0] <inform> [FieldCore] Add field U field_id 1 space H1 field continuity CONTINUOUS approximation base AINSWORTH_LEGENDRE_BASE nb coefficients 3 meshset 12682136550675316759
+[0] <inform> [FieldCore] Add field SIGMA field_id 2 space HDIV field continuity CONTINUOUS approximation base DEMKOWICZ_JACOBI_BASE nb coefficients 3 meshset 12682136550675316760
+[0] <inform> [FieldCore] Add field GEOMETRY field_id 4 space H1 field continuity CONTINUOUS approximation base AINSWORTH_LEGENDRE_BASE nb coefficients 3 meshset 12682136550675316761
 [0] <inform> [FECore] Add finite element dFE
 [0] <inform> [FECore] Add finite element bFE
 [0] <inform> [ProblemCore] Add problem SimpleProblem
 [1] <warning> [MeshsetMng] broadcasted vertex 1293 has negative id
 [2] <warning> [MeshsetMng] broadcasted vertex 1490 has negative id
-[3] <warning> [MeshsetMng] broadcasted vertex 1283 has negative id
+[4] <warning> [MeshsetMng] broadcasted vertex 1251 has negative id
 [5] <warning> [MeshsetMng] broadcasted vertex 1210 has negative id
 [6] <warning> [MeshsetMng] broadcasted vertex 1266 has negative id
 [7] <warning> [MeshsetMng] broadcasted vertex 1279 has negative id
@@ -81,66 +77,7 @@
 [0] <inform> [Indent] alpha_damping 0
 [0] <inform> [Indent] Scale 1
 [0] <inform> [Indent] Is quasi-static: true
-[0] <inform> [petsc] MFront material model: TRIDIMENSIONAL 
-[0] <inform> [petsc] LinearElasticity behaviour loaded on block 8. 
-[0] <inform> [petsc] Small Strain Kinematics 
-[0] <inform> [petsc] Internal variables: 
-[0] <inform> [petsc] : ElasticStrain
-[0] <inform> [petsc] External variables: 
-[0] <inform> [petsc] : Temperature
-[0] <inform> [petsc] Material properties: 
-[0] <inform> [petsc] 0 : YoungModulus = 9.6e+07
-[0] <inform> [petsc] 1 : PoissonRatio = 0.499
-[0] <inform> [petsc] Real parameters: 
-[0] <inform> [petsc] 2 : minimal_time_step_scaling_factor
-[0] <inform> [petsc] 3 : maximal_time_step_scaling_factor
-[0] <inform> [petsc] Integer parameters: 
-[0] <inform> [petsc] Unsigned short parameters: 
-[0] <inform> [petsc] MFront material model: TRIDIMENSIONAL 
-[0] <inform> [petsc] LinearElasticity behaviour loaded on block 9. 
-[0] <inform> [petsc] Small Strain Kinematics 
-[0] <inform> [petsc] Internal variables: 
-[0] <inform> [petsc] : ElasticStrain
-[0] <inform> [petsc] External variables: 
-[0] <inform> [petsc] : Temperature
-[0] <inform> [petsc] Material properties: 
-[0] <inform> [petsc] 0 : YoungModulus = 1.82e+08
-[0] <inform> [petsc] 1 : PoissonRatio = 0.499
-[0] <inform> [petsc] Real parameters: 
-[0] <inform> [petsc] 2 : minimal_time_step_scaling_factor
-[0] <inform> [petsc] 3 : maximal_time_step_scaling_factor
-[0] <inform> [petsc] Integer parameters: 
-[0] <inform> [petsc] Unsigned short parameters: 
-[0] <inform> [petsc] MFront material model: TRIDIMENSIONAL 
-[0] <inform> [petsc] LinearElasticity behaviour loaded on block 10. 
-[0] <inform> [petsc] Small Strain Kinematics 
-[0] <inform> [petsc] Internal variables: 
-[0] <inform> [petsc] : ElasticStrain
-[0] <inform> [petsc] External variables: 
-[0] <inform> [petsc] : Temperature
-[0] <inform> [petsc] Material properties: 
-[0] <inform> [petsc] 0 : YoungModulus = 3.51e+08
-[0] <inform> [petsc] 1 : PoissonRatio = 0.499
-[0] <inform> [petsc] Real parameters: 
-[0] <inform> [petsc] 2 : minimal_time_step_scaling_factor
-[0] <inform> [petsc] 3 : maximal_time_step_scaling_factor
-[0] <inform> [petsc] Integer parameters: 
-[0] <inform> [petsc] Unsigned short parameters: 
-[0] <inform> [petsc] MFront material model: TRIDIMENSIONAL 
-[0] <inform> [petsc] LinearElasticity behaviour loaded on block 11. 
-[0] <inform> [petsc] Small Strain Kinematics 
-[0] <inform> [petsc] Internal variables: 
-[0] <inform> [petsc] : ElasticStrain
-[0] <inform> [petsc] External variables: 
-[0] <inform> [petsc] : Temperature
-[0] <inform> [petsc] Material properties: 
-[0] <inform> [petsc] 0 : YoungModulus = 6.68e+08
-[0] <inform> [petsc] 1 : PoissonRatio = 0.499
-[0] <inform> [petsc] Real parameters: 
-[0] <inform> [petsc] 2 : minimal_time_step_scaling_factor
-[0] <inform> [petsc] 3 : maximal_time_step_scaling_factor
-[0] <inform> [petsc] Integer parameters: 
-[0] <inform> [petsc] Unsigned short parameters: 
+[0] <inform> [ProblemsManager] No blocksets on the mesh has been provided for MFront (e.g. MFRONT_MAT_1)
 [0] <inform> [ProblemsManager] MFront approximation base AINSWORTH_LEGENDRE_BASE
 [0] <inform> [ProblemsManager] Removed DOFs from problem SimpleProblem dofs [194898 / 194898 (before 194898 / 194898) global]
 [0] <inform> [ProblemsManager] Removed DOFs from problem SimpleProblem dofs [194898 / 194898 (before 194898 / 194898) global]
@@ -220,23 +157,168 @@ Displacement magnitude (Z-Rotation): N/A
  
 [0] <warning> The  file not provided. Loading scaled with time.
 [0] <warning> *** Warning data file body_force_hist.txt open unsuccessful. Using linear time scaling.
-[0] <inform> [OpFlux] Add meshset 12682136550675316759 type BLOCKSET UNKNOWNNAME msId 7 name FORCE                          
+[0] <inform> [OpFlux] Add meshset 12682136550675316755 type BLOCKSET UNKNOWNNAME msId 7 name FORCE                          
 [0] <inform> [OpFlux] Flux blockset FORCE                          
 [0] <inform> [OpFlux] Number of attributes 3
 [0] <inform> [OpFlux] tForce vector initialised: [100000,0,0]
 [0] <inform> [OpFlux] Number of elements 0
 [0] <warning> The  file not provided. Loading scaled with time.
 [0] <inform> [petsc] 0 TS dt 0.05 time 0.
+[5] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[5] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[5] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[5] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[5] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[5] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[5] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[5] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[5] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[5] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[5] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[5] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[5] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[5] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
+[5] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[5] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[5] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[5] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[5] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[5] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[5] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[5] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[5] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[4] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[4] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[4] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[4] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[4] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[4] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[4] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[4] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[4] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[4] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[4] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[4] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[4] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[4] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
+[4] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[4] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[4] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[4] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[3] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[4] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[4] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[3] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[3] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[4] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[3] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[3] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[3] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[1] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[3] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[1] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[1] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[1] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[0] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[0] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[0] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[0] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[1] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[1] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[1] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[0] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[0] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[0] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[3] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[3] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[4] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[4] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[3] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[1] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[1] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[3] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[3] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[3] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[1] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[0] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[0] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[1] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[3] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
+[1] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[1] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[0] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[3] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[3] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[1] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
+[3] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
+[3] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[1] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[1] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[0] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[3] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[1] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[1] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[0] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[3] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[3] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[1] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[1] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[1] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[0] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[0] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[0] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[3] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[3] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[1] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[1] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[0] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[0] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[7] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[7] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[7] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[7] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[7] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[7] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[7] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[7] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[7] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[7] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[7] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[7] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[7] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
 [2] <error> --------------------- MoFEM Error Message ---------------------------------------------------
 [2] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[7] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
 [2] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
 [2] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
+[7] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
 [2] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
 [2] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
+[7] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
 [2] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
+[7] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[7] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[7] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[6] <error> --------------------- MoFEM Error Message ---------------------------------------------------
+[7] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[7] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[6] <error> MoFEM version 0.14.0 (MOAB 5.5.0 Petsc Release Version 3.16.6, Mar 30, 2022 )
+[6] <error> MoFEM git commit id 693a01d8ad1e79f10b1dc4f1dd785f311161b1d1
+[6] <error> See http://mofem.eng.gla.ac.uk/mofem/html/ guidelines_bug_reporting.html for bug reporting.
 [2] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[6] <error> Write to https://groups.google.com/forum/#!forum/mofem-group to seek help.
+[6] <error> Std out of range error: map::at at 280 : /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp in doWork
 [2] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[6] <error> #1 doWork() line 280 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontOperators.cpp
 [2] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[7] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[7] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
 [2] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
 [2] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
 [2] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
@@ -247,9 +329,516 @@ Displacement magnitude (Z-Rotation): N/A
 [2] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
 [2] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
 [2] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[6] <error> #2 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) operator()() line 124 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[6] <error> #3 (Calling user data operator MFrontInterface::OpStressTmp<true, false, (ModelHypothesis)0> rowField U colField U) loopOverOperators() line 1631 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/ForcesAndSourcesCore.cpp
+[6] <error> #4 operator()() line 447 in /mofem_install/mofem-cephas/mofem/src/finite_elements/impl/VolumeElementForcesAndSourcesCore.cpp
+[6] <error> #5 loop_finite_elements() line 482 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[6] <error> #6 DMoFEMLoopFiniteElementsUpAndLowRank() line 575 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[6] <error> #7 DMoFEMLoopFiniteElements() line 594 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/DMMoFEM.cpp
+[6] <error> #8 updateElementVariables() line 760 in /mofem_install/mofem-cephas/mofem/users_modules/mfront_interface/src/imp/MFrontMoFEMInterface.cpp
 [2] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
+[6] <error> #9 postProcess() line 484 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/src/PostProcContact.hpp
+[6] <error> #10 loop_finite_elements() line 489 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[6] <error> #11 loop_finite_elements() line 525 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[6] <error> #12 loop_finite_elements() line 504 in /mofem_install/mofem-cephas/mofem/src/interfaces/impl/ProblemsCore.cpp
+[6] <error> #13 TsMonitorSet() line 305 in /mofem_install/mofem-cephas/mofem/src/petsc/impl/TsCtx.cpp
+[6] <error> #14 TSMonitor() line 40 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/tsmon.c
+[6] <error> #15 TSSolve() line 3962 in /tmp/root/spack-stage/spack-stage-petsc-3.16.6-rosm7wmpuxi2aiwuysjdn3vf6wbaynmo/spack-src/src/ts/interface/ts.c
 [2] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
 [2] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[6] <error> #16 tsSolve() line 815 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[6] <error> #17 runProblem() line 165 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[5] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[5] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 5 in communicator MPI_COMM_WORLD
+with errorcode 108.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+[4] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[4] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+[1] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[1] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+[3] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+[6] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[6] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+[7] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[7] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+[0] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[0] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
+#PETSc Option Table entries:
+-atom_test 6
+-contact_order 0
+-fieldsplit_0_ksp_reuse_preconditioner 1
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_mat_mumps_icntl_13 1
+-fieldsplit_0_mat_mumps_icntl_14 800
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_0_mat_mumps_icntl_24 1
+-fieldsplit_0_pc_factor_mat_solver_type mumps
+-fieldsplit_0_pc_type lu
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_mat_mumps_icntl_13 1
+-fieldsplit_1_mat_mumps_icntl_14 800
+-fieldsplit_1_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_24 1
+-fieldsplit_1_pc_factor_mat_solver_type mumps
+-fieldsplit_1_pc_type lu
+-file_name /mofem_install/jupyter/thomas/mfront_example_test/test_env_8p.h5m
+-is_axisymmetric 0
+-ksp_atol 1e-12
+-ksp_monitor
+-ksp_rtol 1e-12
+-ksp_type gmres
+-log_no_color 1
+-log_sl inform
+-mat_mumps_icntl_13 1
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_24 1
+-mi_block_2 LinearElasticity
+-mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
+-mi_param_2_0 200000000000.0
+-mi_param_2_1 0.3
+-mi_param_2_2 0
+-mi_param_2_3 0
+-mi_param_2_4 0
+-mi_save_gauss 0
+-mi_save_volume 1
+-order 2
+-pc_factor_mat_solver_type mumps
+-pc_fieldsplit_type multiplicative
+-pc_type lu
+-sdf_file /mofem_install/jupyter/thomas/mfront_example_test/sdf.py
+-sigma_order 0
+-snes_atol 1e-8
+-snes_converged_reason
+-snes_divergence_tolerance -1
+-snes_linesearch_type bt
+-snes_max_it 40
+-snes_max_linear_solve_fail -1
+-snes_monitor
+-snes_rtol 1e-8
+-ts_adapt_monitor
+-ts_adapt_type none
+-ts_dt 0.05
+-ts_error_if_step_fails false
+-ts_exact_final_time matchstep
+-ts_max_snes_failures -1
+-ts_max_steps 1000
+-ts_max_time 1
+-ts_monitor
+-ts_theta_initial_guess_extrapolate
+-ts_theta_theta 1
+-ts_type beuler
+-use_mfront 1
+#End of PETSc Option Table entries
+[3] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
 [2] <error> #18 main() line 969 in /mofem_install/mofem-cephas/mofem/users_modules/tutorials/adv-1/contact.cpp
 #PETSc Option Table entries:
 -atom_test 6
@@ -281,41 +870,13 @@ Displacement magnitude (Z-Rotation): N/A
 -mat_mumps_icntl_14 800
 -mat_mumps_icntl_20 0
 -mat_mumps_icntl_24 1
--mi_block_10 LinearElasticity
--mi_block_11 LinearElasticity
 -mi_block_2 LinearElasticity
--mi_block_8 LinearElasticity
--mi_block_9 LinearElasticity
--mi_lib_path_10 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
--mi_lib_path_11 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
 -mi_lib_path_2 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
--mi_lib_path_8 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
--mi_lib_path_9 /mofem_install/jupyter/thomas/um_view/mfront_interface/libBehaviour.so
--mi_param_10_0 351000000.0
--mi_param_10_1 0.499
--mi_param_10_2 0
--mi_param_10_3 0
--mi_param_10_4 0
--mi_param_11_0 668000000.0
--mi_param_11_1 0.499
--mi_param_11_2 0
--mi_param_11_3 0
--mi_param_11_4 0
 -mi_param_2_0 200000000000.0
 -mi_param_2_1 0.3
 -mi_param_2_2 0
 -mi_param_2_3 0
 -mi_param_2_4 0
--mi_param_8_0 96000000.0
--mi_param_8_1 0.499
--mi_param_8_2 0
--mi_param_8_3 0
--mi_param_8_4 0
--mi_param_9_0 182000000.0
--mi_param_9_1 0.499
--mi_param_9_2 0
--mi_param_9_3 0
--mi_param_9_4 0
 -mi_save_gauss 0
 -mi_save_volume 1
 -order 2
@@ -347,11 +908,5 @@ Displacement magnitude (Z-Rotation): N/A
 -use_mfront 1
 #End of PETSc Option Table entries
 [2] <error> -- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --
---------------------------------------------------------------------------
-MPI_ABORT was invoked on rank 2 in communicator MPI_COMM_WORLD
-with errorcode 108.
-
-NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
-You may or may not see output from other processes, depending on
-exactly when Open MPI kills them.
---------------------------------------------------------------------------
+[90edacdfccce:55695] 7 more processes have sent help message help-mpi-api.txt / mpi-abort
+[90edacdfccce:55695] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages

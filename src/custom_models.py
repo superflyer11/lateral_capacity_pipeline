@@ -4,8 +4,6 @@ from typing_extensions import Self
 from pydantic import BaseModel, model_validator
 import gmsh
 from enum import Enum
-class BoxLayer(BaseModel):
-    dz: float
     
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
@@ -59,7 +57,7 @@ class PropertyTypeEnum(Enum):
 class MaterialProperty(BaseModel):
     pass
     
-class ElasticProperties(MaterialProperty):
+class LinearElasticProperties(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
 
@@ -83,10 +81,10 @@ class CamClayProperties(MaterialProperty):
 
 class SoilLayer(BaseModel):
     depth: float
-    elastic_properties: ElasticProperties
+    linear_elastic_properties: LinearElasticProperties
+    mcc_properties: CamClayProperties = CamClayProperties()
 
-#todo: update class name to show it is a BC block
-class CFGBLOCK(BaseModel):
+class BC_CONFIG_BLOCK(BaseModel):
     block_name: str
     comment: str
     attributes: list
@@ -105,8 +103,7 @@ class CFGBLOCK(BaseModel):
 number_of_attributes={self.number_of_attributes}\n""" + attrs
         return block
     
-#todo: update class name to show it is a mfront material block
-class CFGBLOCK2(BaseModel):
+class MFRONT_CONFIG_BLOCK(BaseModel):
     block_name: str
     comment: str
     id: int
@@ -181,20 +178,20 @@ class BoxManager(BaseModel):
     def near_field_max_z(self) -> float:
         return (self.min_z + self.max_z) / 2 + self.near_field_dist
     
-    def add_layer(self, box: BoxLayer):
-        layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.dz)
+    def add_layer(self, box: SoilLayer):
+        layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.depth)
         self.new_layer_z += box.dz
         return layer_tag
     
-    def create_CFGBLOCKS(self) -> List[CFGBLOCK]:
+    def create_CFGBLOCKS(self) -> List[BC_CONFIG_BLOCK]:
         blocks = []
         for i in range(1, len(self.layers) + 1):
-            block = CFGBLOCK(
+            block = BC_CONFIG_BLOCK(
                 name=f'SOIL_LAYER_{i}', 
                 number_of_attributes=2, 
                 attributes=[
-                self.layers[i].elastic_properties.youngs_modulus,
-                self.layers[i].elastic_properties.poisson_ratio,
+                self.layers[i].linear_elastic_properties.youngs_modulus,
+                self.layers[i].linear_elastic_properties.poisson_ratio,
             ])
             blocks.append(block)
         return blocks
@@ -208,20 +205,20 @@ class PileManager(BaseModel):
     dz: float 
     R: float
     r: float
-    elastic_properties: ElasticProperties
+    linear_elastic_properties: LinearElasticProperties
     
     def addPile(self):
         outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
         return [outer_tag, inner_tag]
     
-    def create_CFGBLOCK(self) -> CFGBLOCK:
-        block = CFGBLOCK(
+    def create_CFGBLOCK(self) -> BC_CONFIG_BLOCK:
+        block = BC_CONFIG_BLOCK(
             name=f'CYLINDER', 
             number_of_attributes=2, 
             attributes=[
-            self.elastic_properties.youngs_modulus,
-            self.elastic_properties.poisson_ratio,
+            self.linear_elastic_properties.youngs_modulus,
+            self.linear_elastic_properties.poisson_ratio,
         ])
         return block
     
@@ -253,7 +250,7 @@ if __name__ == "__main__":
     gmsh.model.add(f"test")
 
     pile_manager = PileManager(x=0, y=0, z=10.5, dx=0, dy=0, dz=-20.5, R=1, r=0.975,
-                              elastic_properties=ElasticProperties(youngs_modulus=200 * (10 ** 9), poisson_ratio=0.3)
+                              elastic_properties=LinearElasticProperties(youngs_modulus=200 * (10 ** 9), poisson_ratio=0.3)
                               )
 
     outer_cylinder_tag, inner_cylinder_tag = pile_manager.addPile()
