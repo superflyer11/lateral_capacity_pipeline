@@ -78,7 +78,19 @@ class DruckerPragerProperties(MaterialProperty):
     pass
 
 class CamClayProperties(MaterialProperty):
-    pass
+    hvorslev_shape_alpha: float = 0
+    hvorslev_shape_n: float = 0
+    hvorslev_plastic_potential_beta: float = 0
+    hvorslev_plastic_potential_m: float = 0
+    v0: float = 0
+    la: float = 0
+    ka: float = 0
+    G_0*: float = 0
+    a: float = 0
+    b: float = 0
+    RG_min: float = 0
+    
+    
 
 class SoilLayer(BaseModel):
     depth: float
@@ -127,6 +139,7 @@ class BoxManager(BaseModel):
     far_field_size: float = 5
     near_field_dist: float = 40
     near_field_size: float = 1
+    layers: Dict[int, SoilLayer]
     
     
     @property
@@ -181,9 +194,6 @@ class BoxManager(BaseModel):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.dz)
         self.new_layer_z += box.dz
         return layer_tag
-
-class SoilBlock(BaseModel):
-    layers: Dict[int, SoilLayer]
     
     def create_CFGBLOCKS(self) -> List[CFGBLOCK]:
         blocks = []

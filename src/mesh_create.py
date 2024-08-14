@@ -70,7 +70,7 @@ def draw_mesh(params) -> cm.GeometryTagManager:
 
     soil_layer_tags = []
     # Add boxes for the layers
-    for no, layer in params.properties.layers.items():
+    for no, layer in params.box_manager.layers.items():
         soil_box = cm.BoxLayer(dz=layer.depth)
         new_tag = params.box_manager.add_layer(soil_box)
         soil_layer_tags.append(new_tag)
@@ -221,7 +221,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     for i in range(1, 5):
         physical_groups.append(cm.PhysicalGroup(
             dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER_1",
-            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.properties.layers[i].elastic_properties}
+            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
         ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.pile_volumes, name="CYLINDER",
