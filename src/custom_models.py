@@ -110,7 +110,7 @@ class CFGBLOCK2(BaseModel):
     id: int
     
     def formatted(self):
-        block = f"""[{self.name}]
+        block = f"""[MFRONT_MAT_{self.id}]
 # {self.comment}
 id={self.id}
 add=BLOCKSET
@@ -159,87 +159,6 @@ class PileManager(BaseModel):
     elastic_properties: ElasticProperties
     
     def addPile(self):
-        # #outer top
-        # point1 = gmsh.model.geo.addPoint(self.x+self.R, self.y, self.z)
-        # point2 = gmsh.model.geo.addPoint(self.x, self.y+self.R, self.z)
-        # point3 = gmsh.model.geo.addPoint(self.x, self.y-self.R, self.z)
-        # point101 = gmsh.model.geo.addPoint(self.x, self.y, self.z)
-        # arc1 = gmsh.model.geo.addCircleArc(point3, point101, point2)
-        # arc2 = gmsh.model.geo.addCircleArc(point2, point101, point3)
-        # #outer bottom
-        # point4 = gmsh.model.geo.addPoint(self.x+self.R, self.y, self.z+self.dz)
-        # point5 = gmsh.model.geo.addPoint(self.x, self.y+self.R, self.z+self.dz)
-        # point6 = gmsh.model.geo.addPoint(self.x, self.y-self.R, self.z+self.dz)
-        # point102 = gmsh.model.geo.addPoint(self.x, self.y, self.z+self.dz)
-        
-        # arc3 = gmsh.model.geo.addCircleArc(point6, point102, point5)
-        # arc4 = gmsh.model.geo.addCircleArc(point5, point102, point6)
-        
-        # line1 = gmsh.model.geo.addLine(startTag = point3, endTag = point6)
-        # line2 = gmsh.model.geo.addLine(startTag = point2, endTag = point5)
-               
-        # #outer
-        # loop1 = gmsh.model.geo.addCurveLoop([arc1,arc2])
-        # loop2 = gmsh.model.geo.addCurveLoop([arc3,arc4])
-        # loop3 = gmsh.model.geo.addCurveLoop([-arc1,line1,arc3,-line2])
-        # loop4 = gmsh.model.geo.addCurveLoop([arc2,line1,-arc4,-line2])
-        
-        # #surfaces
-        # surface1 = gmsh.model.geo.addPlaneSurface([loop1])
-        # surface2 = gmsh.model.geo.addPlaneSurface([loop2])
-        # surface3 = gmsh.model.geo.addSurfaceFilling([loop3])
-        # surface4 = gmsh.model.geo.addSurfaceFilling([loop4])
-        
-        # #volume
-        # surfaceLoop1 = gmsh.model.geo.addSurfaceLoop([surface1,surface3,surface2,surface4])
-        # outer_cylinder = gmsh.model.geo.addVolume([surfaceLoop1])
-        
-        # #inner
-        # #inner top
-        # point7 = gmsh.model.geo.addPoint(self.x+self.r, self.y, self.z)
-        # point8 = gmsh.model.geo.addPoint(self.x, self.y+self.r, self.z)
-        # point9 = gmsh.model.geo.addPoint(self.x, self.y-self.r, self.z)
-        # point103 = gmsh.model.geo.addPoint(self.x, self.y, self.z)
-        
-        # arc5 = gmsh.model.geo.addCircleArc(point9, point103, point8)
-        # arc6 = gmsh.model.geo.addCircleArc(point8, point103, point9)
-        # #inner bottom
-        # point10 = gmsh.model.geo.addPoint(self.x+self.r, self.y, self.z+self.dz)
-        # point11 = gmsh.model.geo.addPoint(self.x, self.y+self.r, self.z+self.dz)
-        # point12 = gmsh.model.geo.addPoint(self.x, self.y-self.r, self.z+self.dz)
-        # point104 = gmsh.model.geo.addPoint(self.x, self.y, self.z)
-        
-        # arc7 = gmsh.model.geo.addCircleArc(point12, point104, point11)
-        # arc8 = gmsh.model.geo.addCircleArc(point11, point104, point12)
-        
-        # line3 = gmsh.model.geo.addLine(startTag = point9, endTag = point12)
-        # line4 = gmsh.model.geo.addLine(startTag = point8, endTag = point11)
-        
-        
-        # loop5 = gmsh.model.geo.addCurveLoop([arc5,arc6])
-        # loop6 = gmsh.model.geo.addCurveLoop([arc7,arc8])
-        # loop7 = gmsh.model.geo.addCurveLoop([-arc5,line3,arc7,-line4])
-        # loop8 = gmsh.model.geo.addCurveLoop([arc6,line3,-arc8,-line4])
-        
-        
-        # surface5 = gmsh.model.geo.addPlaneSurface([loop3])
-        # surface6 = gmsh.model.geo.addPlaneSurface([loop4])
-        # surface7 = gmsh.model.geo.addSurfaceFilling([loop7])
-        # surface8 = gmsh.model.geo.addSurfaceFilling([loop8])
-        
-        # surfaceLoop2 = gmsh.model.geo.addSurfaceLoop([surface5,surface7,surface6,surface8])
-        
-        
-        # inner_cylinder = gmsh.model.geo.addVolume([surfaceLoop2])
-        
-
-        # # box = gmsh.model.geo.addBox(300,300,300,100,100,100)
-        # # surface5 = gmsh.model.geo.addPlaneSurface([loop1, loop2])
-        # # surface6 = gmsh.model.geo.addPlaneSurface([loop3, loop4])
-        # # hollow_cylinder = gmsh.model.geo.addVolume([surface5, surface6])
-        # return [outer_cylinder, 
-        #         inner_cylinder,
-        #         arc1]
         outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
         return [outer_tag, inner_tag]
