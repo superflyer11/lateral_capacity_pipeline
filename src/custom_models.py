@@ -6,10 +6,6 @@ import gmsh
 from enum import Enum
 class BoxLayer(BaseModel):
     dz: float
-
-
-    
-
     
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []

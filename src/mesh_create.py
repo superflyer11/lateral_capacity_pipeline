@@ -90,17 +90,7 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     )
     cut_soil_boxes = [tag for _, tag in cut_soil_tags]
 
-    # Cut the soil blocks in half with the symmetry cutter plane
     symmetry_cutter_tag = gmsh.model.occ.addBox(-200, 0, -200, 400, 400, 400)
-
-    # cut_soil_tags, _ = gmsh.model.occ.cut(
-    #     [[3, tag] for tag in cut_soil_boxes],
-    #     [[3, symmetry_cutter_tag]],
-    #     -1,
-    #     removeObject=True,
-    #     removeTool=False,
-    # )
-    # cut_soil_boxes = [tag for _, tag in cut_soil_tags]
 
     # Cut the outer cylinder with the inner cylinder to form the pile
     cut_pile_tags, _ = gmsh.model.occ.cut(
@@ -230,7 +220,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
 
     for i in range(1, 5):
         physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER{i+7}",
+            dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER_1",
             group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.properties.layers[i].elastic_properties}
         ))
     physical_groups.append(cm.PhysicalGroup(
@@ -270,8 +260,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
             name=group.name
         ))
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.min_x, params.box_manager.min_y, params.box_manager.min_z, params.box_manager.max_x, params.box_manager.max_y, params.box_manager.max_z), params.box_manager.far_field_size)
-    gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.far_field_size)
-    gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(-40, -40, -40, 40, 0, 0), params.box_manager.near_field_size)
+    gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
     # Setting Gmsh options and generating mesh
     try:
         gmsh.model.occ.synchronize()
