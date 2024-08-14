@@ -33,7 +33,7 @@ class GeometryTagManager(BaseModel):
 
 
 class BoundaryCondition(BaseModel):
-    add: str
+    pass
 
 class NodeBoundaryCondition(BoundaryCondition):
     disp_flag1: float = 0
@@ -60,6 +60,11 @@ class SurfaceBoundaryCondition(BoundaryCondition):
     disp_uz: float = 0
     pressure_flag2: float = 0
     pressure_magnitude: float = 0
+    
+class Force(BoundaryCondition):
+    fx: int = 0
+    fy: int = 0
+    fz: int = 0
 
 class PropertyTypeEnum(Enum):
     elastic = 1
@@ -86,14 +91,12 @@ class SoilLayer(BaseModel):
 #todo: update class name to show it is a BC block
 class CFGBLOCK(BaseModel):
     name: str
-    number_of_attributes: int
-    # user_attributes: list
+    # number_of_attributes: int
+    user_attributes: list
 
-    # @model_validator(mode='after')
-    # def validate_number_of_attributes(self) -> Self:
-    #     if self.number_of_attributes != len(self.user_attributes):
-    #         raise ValueError(f'Expected {self.number_of_attributes} attributes, got {len(self.user_attributes)}')
-    #     return self
+    @property
+    def number_of_attributes(self) -> int
+        return len(self.user_attributes)
     
     def formatted(self):
         attrs = ''
@@ -125,7 +128,59 @@ class BoxManager(BaseModel):
     dx: float
     dy: float
     new_layer_z: float = 0
+    far_field_size: float = 5
+    near_field_dist: float = 40
+    near_field_size: float = 1
+    
+    
+    @property
+    def min_x(self) -> float:
+        return self.x
+    
+    @property
+    def min_y(self) -> float:
+        return self.y
 
+    @property
+    def min_z(self) -> float:
+        return self.new_layer_z
+
+    @property
+    def max_x(self) -> float:
+        return self.x + self.dx
+    
+    @property
+    def max_y(self) -> float:
+        return self.y + self.dy
+
+    @property
+    def max_z(self) -> float:
+        return self.max_z
+    
+    @property
+    def near_field_min_x(self) -> float:
+        return (self.min_x + self.max_x) / 2 - near_field_dist
+    
+    @property
+    def near_field_min_y(self) -> float:
+        return (self.min_y + self.max_y) / 2 - near_field_dist
+
+    @property
+    def near_field_min_z(self) -> float:
+        return (self.min_z + self.max_z) / 2 - near_field_dist
+
+    @property
+    def near_field_max_x(self) -> float:
+        return (self.min_x + self.max_x) / 2 + near_field_dist
+    
+    @property
+    def near_field_max_y(self) -> float:
+        return (self.min_y + self.max_y) / 2 + near_field_dist
+
+    @property
+    def near_field_max_z(self) -> float:
+        return (self.min_z + self.max_z) / 2 + near_field_dist
+    
     def add_layer(self, box: BoxLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.dz)
         self.new_layer_z += box.dz
@@ -193,12 +248,6 @@ class PhysicalGroup(BaseModel):
     def verify(self):
         if meshnet_id == None:
             raise ValueError('Missing meshnet_id')  
-        
-    # @model_validator  (mode='after')
-    # def validate_number_of_attributes(self) -> Self:
-    #     if self.number_of_attributes != len(self.user_attributes):
-    #         raise ValueError(f'Expected {self.number_of_attributes} attributes, got {len(self.user_attributes)}')
-    #     return self
     
 
 if __name__ == "__main__":
