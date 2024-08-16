@@ -40,11 +40,13 @@ def run_command(index, command, log_file):
 
 
 # os.chdir("/mofem_install/um-build-Release-u3my3yi/tutorials/vec-10000")
-class AttrDict():
-    def _getattr(self,attr):
+class AttrDict(dict):
+    def __getattr__(self, attr):
         if attr in self:
             return self[attr]
-        raise AttributeError(f"Attribute {attr} not found")
+        raise AttributeError(f"'AttrDict' object has no attribute '{attr}'")
+    def __setattr__(self, key, value):
+        self[key] = value
 
 
 
@@ -216,25 +218,13 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     physical_groups = []
 
     for i in range(1, 5):
-        # if i == 1:
-        #     mfront_block_id = 10
-        # elif i == 2:
-        #     mfront_block_id = 11
-        # elif i == 3:
-        #     mfront_block_id = 8
-        # elif i == 4:
-        #     mfront_block_id = 9
         physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i-1]], name=f"cascade_test_{i}",
-            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
+            dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER_{i}",
+            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].linear_elastic_properties}
         ))
-        # physical_groups.append(cm.PhysicalGroup(
-        #     dim=3, tags=[geo.soil_volumes[i-1]], name=f"MFRONT_MAT_{i+11}",
-        #     group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].elastic_properties}
-        # ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.pile_volumes, name="CYLINDER",
-        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.elastic_properties},gmsh_tag=5,
+        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.linear_elastic_properties},gmsh_tag=5,
     ))
 
     # Adding boundary condition physical groups
@@ -258,7 +248,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
 
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FORCE",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.ForceBoundaryCondition(fx=100000,),
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.force,
     ))  # TOP FACE OF PILE
     # Adding physical groups to Gmsh model
     physical_group_dimtag = {}
@@ -329,7 +319,8 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
 
 @ut.track_time("GENERATING CONFIG FILES")
 def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
-    blocks: list[cm.MFRONT_CONFIG_BLOCK] = []
+    blocks: list[BC_CONFIG_BLOCK | cm.MFRONT_CONFIG_BLOCK] = []
+    new_physical_groups: List[cm.PhysicalGroup] = []
     for i in range(len(physical_groups)):
         if physical_groups[i].group_type == cm.PhysicalGroupType.BOUNDARY_CONDITION:
             print(physical_groups[i].bc.dict())
@@ -339,18 +330,37 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
                 id = physical_groups[i].meshnet_id,
                 attributes = list(physical_groups[i].bc.dict().values()),
             ))
+            
+        #very messy!
         elif physical_groups[i].group_type == cm.PhysicalGroupType.MATERIAL:
+            new_physical_group = physical_groups[i].model_copy(deep=True, update={'meshnet_id': physical_groups[i].meshnet_id + 100, 'name': f"MFRONT_MAT_{physical_groups[i].meshnet_id}"})
+            new_physical_groups.append(new_physical_group)
             blocks.append(cm.MFRONT_CONFIG_BLOCK(
                 block_name = f"block_{physical_groups[i].meshnet_id}",
+                id = new_physical_group.meshnet_id,
                 comment = f"Material properties for {physical_groups[i].name}",
-                id = physical_groups[i].meshnet_id,
+                name = new_physical_group.name,
             ))
-        
-
+            
+            # new_physical_group_2 = physical_groups[i].model_copy(deep=True, update={'meshnet_id': physical_groups[i].meshnet_id + 200})
+            # new_physical_groups.append(new_physical_group_2)
+            # blocks.append(cm.MFRONT_CONFIG_BLOCK(
+            #     block_name = f"MFRONT_MAT_{physical_groups[i].meshnet_id}",
+            #     id = new_physical_group_2.meshnet_id,
+            #     comment = f"Material properties for {new_physical_group_2.name}",
+            #     name = f"MFRONT_MAT_{physical_groups[i].meshnet_id}",
+            # ))
+            
     with open(params.config_file, "w") as f:
         for i in range(len(blocks)):
             f.writelines(blocks[i].formatted())
+            
+    return physical_groups + new_physical_groups
+    
         
+
+
+
 
 @ut.track_time("INJECTING CONFIG FILE")
 def inject_configs(params):
@@ -371,6 +381,7 @@ def inject_configs(params):
     except subprocess.CalledProcessError as e:
         print(f"Error injecting configs: {e}")
         raise
+
 
 
 
@@ -478,23 +489,3 @@ def test():
     print('Hello world!')
 # if __name__ == "__main__":
 #     params = AttrDict()
-#     ############################################################################################################
-#     # GENERATING MESH FILES
-#     ############################################################################################################
-#     geo = draw_mesh(params)
-#     # geo = discretise_mesh(params)
-#     physical_groups = add_physical_groups(params, geo)
-#     ############################################################################################################
-#     # GENERATING CONFIG FILE
-#     ############################################################################################################
-#     physical_groups = check_block_ids(params,physical_groups)
-#     generate_config(params,physical_groups)
-#     # sys.exit()
-#     inject_configs(params)
-#     ############################################################################################################
-#     # RUNNING MOFEM
-#     ############################################################################################################
-#     clear_main_log(params)
-#     partition_mesh(params)
-#     set_environment_variables(params)
-#     run_mofem(params)

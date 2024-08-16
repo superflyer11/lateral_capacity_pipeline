@@ -87,8 +87,8 @@ class SoilLayer(BaseModel):
 class BC_CONFIG_BLOCK(BaseModel):
     block_name: str
     comment: str
-    attributes: list
     id: int
+    attributes: list
 
     @property
     def number_of_attributes(self) -> int:
@@ -107,13 +107,14 @@ class MFRONT_CONFIG_BLOCK(BaseModel):
     block_name: str
     comment: str
     id: int
+    name: str
     
     def formatted(self):
         block = f"""[{self.block_name}]
 # {self.comment}
 id={self.id}
 add=BLOCKSET
-name=MFRONT_MAT_{self.id}
+name={self.name}
 """
         return block
 
@@ -180,21 +181,16 @@ class BoxManager(BaseModel):
     
     def add_layer(self, box: SoilLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.depth)
-        self.new_layer_z += box.dz
+        self.new_layer_z += box.depth
         return layer_tag
     
-    def create_CFGBLOCKS(self) -> List[BC_CONFIG_BLOCK]:
-        blocks = []
-        for i in range(1, len(self.layers) + 1):
-            block = BC_CONFIG_BLOCK(
-                name=f'SOIL_LAYER_{i}', 
-                number_of_attributes=2, 
-                attributes=[
-                self.layers[i].linear_elastic_properties.youngs_modulus,
-                self.layers[i].linear_elastic_properties.poisson_ratio,
-            ])
-            blocks.append(block)
-        return blocks
+    # def create_CFGBLOCKS(self) -> List[BC_CONFIG_BLOCK]:
+    #     blocks = []
+    #     for i in range(1, len(self.layers) + 1):
+    #         block = BC_CONFIG_BLOCK(
+    #             block_name=f'SOIL_LAYER_{i}')
+    #         blocks.append(block)
+    #     return blocks
 
 class PileManager(BaseModel):
     x: float
@@ -212,15 +208,15 @@ class PileManager(BaseModel):
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
         return [outer_tag, inner_tag]
     
-    def create_CFGBLOCK(self) -> BC_CONFIG_BLOCK:
-        block = BC_CONFIG_BLOCK(
-            name=f'CYLINDER', 
-            number_of_attributes=2, 
-            attributes=[
-            self.linear_elastic_properties.youngs_modulus,
-            self.linear_elastic_properties.poisson_ratio,
-        ])
-        return block
+    # def create_CFGBLOCK(self) -> MFRONT_CONFIG_BLOCK:
+    #     block = MFRONT_CONFIG_BLOCK(
+    #         name=f'CYLINDER', 
+    #         number_of_attributes=2, 
+    #         attributes=[
+    #         self.linear_elastic_properties.youngs_modulus,
+    #         self.linear_elastic_properties.poisson_ratio,
+    #     ])
+    #     return block
     
 class MeshsetInfo(BaseModel):
     meshset_id: int

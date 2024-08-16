@@ -67,6 +67,6 @@
 
 -use_mfront 1
 -is_axisymmetric 0
--atom_test 6
+#-atom_test 6
 
 -sdf_file sdf.py
