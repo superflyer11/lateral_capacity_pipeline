@@ -140,6 +140,9 @@ def get_surface_extremes(volume: int) -> cm.SurfaceTags:
     surfaceTags = list(surfaceTags[0])
     
     extremes = cm.SurfaceTags()
+
+    # Define a small tolerance for floating-point comparison
+    tolerance = 1e-6
     
     for surface in surfaceTags:
         x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
@@ -148,47 +151,46 @@ def get_surface_extremes(volume: int) -> cm.SurfaceTags:
         if x < extremes.min_x:
             extremes.min_x = x
             extremes.min_x_surfaces = [surface]  # Reset the list
-        elif x == extremes.min_x:
+        elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
             extremes.min_x_surfaces.append(surface)  # Add to the list
 
         # Update max_x
         if x > extremes.max_x:
             extremes.max_x = x
             extremes.max_x_surfaces = [surface]  # Reset the list
-        elif x == extremes.max_x:
+        elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
             extremes.max_x_surfaces.append(surface)  # Add to the list
 
         # Update min_y
         if y < extremes.min_y:
             extremes.min_y = y
             extremes.min_y_surfaces = [surface]  # Reset the list
-        elif y == extremes.min_y:
+        elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
             extremes.min_y_surfaces.append(surface)  # Add to the list
 
         # Update max_y
         if y > extremes.max_y:
             extremes.max_y = y
             extremes.max_y_surfaces = [surface]  # Reset the list
-        elif y == extremes.max_y:
+        elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
             extremes.max_y_surfaces.append(surface)  # Add to the list
 
         # Update min_z
         if z < extremes.min_z:
             extremes.min_z = z
             extremes.min_z_surfaces = [surface]  # Reset the list
-        elif z == extremes.min_z:
+        elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
             extremes.min_z_surfaces.append(surface)  # Add to the list
 
         # Update max_z
         if z > extremes.max_z:
             extremes.max_z = z
             extremes.max_z_surfaces = [surface]  # Reset the list
-        elif z == extremes.max_z:
+        elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
             extremes.max_z_surfaces.append(surface)  # Add to the list
 
     return extremes
-    
-    return extremes
+
 
 def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTags):
     global_tags.min_x_surfaces = [*global_tags.min_x_surfaces,  *surface_data.min_x_surfaces]
@@ -229,11 +231,11 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
 
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.min_x_surfaces, name="FIX_ALL",
+        dim=2, tags=geo.soil_surfaces.max_x_surfaces, name="FIX_ALL",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # LEFT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.max_x_surfaces, name="FIX_X_0",
+        dim=2, tags=geo.soil_surfaces.min_x_surfaces, name="FIX_X_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # RIGHT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
@@ -241,7 +243,9 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # BOTTOM FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=[*geo.soil_surfaces.min_y_surfaces, *geo.soil_surfaces.max_y_surfaces], name="FIX_Y_0",
+        dim=2, tags=[*geo.soil_surfaces.min_y_surfaces, *geo.soil_surfaces.max_y_surfaces, 
+                     *geo.pile_surfaces.max_y_surfaces,
+                     ], name="FIX_Y_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # BACK AND FRONT FACE OF SOIL
     
@@ -262,9 +266,11 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
     # Setting Gmsh options and generating mesh
     try:
-        gmsh.model.occ.synchronize()
-        gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
-        gmsh.option.setNumber("Mesh.MinimumElementsPerTwoPi", 12)
+        # gmsh.model.occ.synchronize()
+        # gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
+        gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 36)
+        gmsh.option.setNumber("Mesh.SaveAll", 1)
         gmsh.model.mesh.generate(3)
         gmsh.write(params.med_filepath.as_posix())
     except Exception as e:
@@ -333,6 +339,7 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
             
         #very messy!
         elif physical_groups[i].group_type == cm.PhysicalGroupType.MATERIAL:
+            print(physical_groups[i])
             new_physical_group = physical_groups[i].model_copy(deep=True, update={'meshnet_id': physical_groups[i].meshnet_id + 100, 'name': f"MFRONT_MAT_{physical_groups[i].meshnet_id}"})
             new_physical_groups.append(new_physical_group)
             blocks.append(cm.MFRONT_CONFIG_BLOCK(
@@ -341,15 +348,6 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
                 comment = f"Material properties for {physical_groups[i].name}",
                 name = new_physical_group.name,
             ))
-            
-            # new_physical_group_2 = physical_groups[i].model_copy(deep=True, update={'meshnet_id': physical_groups[i].meshnet_id + 200})
-            # new_physical_groups.append(new_physical_group_2)
-            # blocks.append(cm.MFRONT_CONFIG_BLOCK(
-            #     block_name = f"MFRONT_MAT_{physical_groups[i].meshnet_id}",
-            #     id = new_physical_group_2.meshnet_id,
-            #     comment = f"Material properties for {new_physical_group_2.name}",
-            #     name = f"MFRONT_MAT_{physical_groups[i].meshnet_id}",
-            # ))
             
     with open(params.config_file, "w") as f:
         for i in range(len(blocks)):

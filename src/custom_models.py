@@ -141,7 +141,8 @@ class BoxManager(BaseModel):
 
     @property
     def min_z(self) -> float:
-        return self.new_layer_z
+        total_depth = sum(layer.depth for layer in self.layers.values())
+        return total_depth + self.max_z
 
     @property
     def max_x(self) -> float:
@@ -161,11 +162,11 @@ class BoxManager(BaseModel):
     
     @property
     def near_field_min_y(self) -> float:
-        return (self.min_y + self.max_y) / 2 - self.near_field_dist
+        return self.max_y - self.near_field_dist
 
     @property
     def near_field_min_z(self) -> float:
-        return (self.min_z + self.max_z) / 2 - self.near_field_dist
+        return self.min_z
 
     @property
     def near_field_max_x(self) -> float:
@@ -173,24 +174,17 @@ class BoxManager(BaseModel):
     
     @property
     def near_field_max_y(self) -> float:
-        return (self.min_y + self.max_y) / 2 + self.near_field_dist
+        return self.max_y
 
     @property
     def near_field_max_z(self) -> float:
-        return (self.min_z + self.max_z) / 2 + self.near_field_dist
+        return self.max_z
     
     def add_layer(self, box: SoilLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.depth)
         self.new_layer_z += box.depth
         return layer_tag
     
-    # def create_CFGBLOCKS(self) -> List[BC_CONFIG_BLOCK]:
-    #     blocks = []
-    #     for i in range(1, len(self.layers) + 1):
-    #         block = BC_CONFIG_BLOCK(
-    #             block_name=f'SOIL_LAYER_{i}')
-    #         blocks.append(block)
-    #     return blocks
 
 class PileManager(BaseModel):
     x: float

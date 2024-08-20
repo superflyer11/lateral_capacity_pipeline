@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-R = 10  # radius of the indenter
+R = 1  # radius of the indenter
 d = 1 # indentation depth
 
 xc = 0
