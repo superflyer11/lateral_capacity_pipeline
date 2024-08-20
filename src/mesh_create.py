@@ -112,6 +112,12 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     pile_vols = [tag for dim, tag in cut_pile_tags]
     if len(pile_vols) != 1:
         raise ValueError(f"Pile not created correctly : {len(pile_vols)}")
+    
+    gmsh.model.occ.removeAllDuplicates()
+    gmsh.model.occ.synchronize()
+    
+    
+    
     soil_surface_tags = cm.SurfaceTags()
     for soil_box in cut_soil_boxes:
         surface_data = get_surface_extremes(soil_box)
@@ -128,7 +134,6 @@ def draw_mesh(params) -> cm.GeometryTagManager:
         soil_surfaces=soil_surface_tags,
         pile_surfaces=pile_surface_tags,
     )
-
     gmsh.model.occ.synchronize()
     
     return geometry_tag_manager
@@ -142,55 +147,54 @@ def get_surface_extremes(volume: int) -> cm.SurfaceTags:
     extremes = cm.SurfaceTags()
 
     # Define a small tolerance for floating-point comparison
-    tolerance = 1e-6
+    tolerance = 1e-5
     
     for surface in surfaceTags:
         x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
         
         # Update min_x
-        if x < extremes.min_x:
+        if x < extremes.min_x - tolerance:
             extremes.min_x = x
             extremes.min_x_surfaces = [surface]  # Reset the list
         elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
-            extremes.min_x_surfaces.append(surface)  # Add to the list
+            extremes.min_x_surfaces.append(surface)  # Append to the list
 
         # Update max_x
-        if x > extremes.max_x:
+        if x > extremes.max_x + tolerance:
             extremes.max_x = x
             extremes.max_x_surfaces = [surface]  # Reset the list
         elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
-            extremes.max_x_surfaces.append(surface)  # Add to the list
+            extremes.max_x_surfaces.append(surface)  # Append to the list
 
         # Update min_y
-        if y < extremes.min_y:
+        if y < extremes.min_y - tolerance:
             extremes.min_y = y
             extremes.min_y_surfaces = [surface]  # Reset the list
         elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
-            extremes.min_y_surfaces.append(surface)  # Add to the list
+            extremes.min_y_surfaces.append(surface)  # Append to the list
 
         # Update max_y
-        if y > extremes.max_y:
+        if y > extremes.max_y + tolerance:
             extremes.max_y = y
             extremes.max_y_surfaces = [surface]  # Reset the list
         elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
-            extremes.max_y_surfaces.append(surface)  # Add to the list
+            extremes.max_y_surfaces.append(surface)  # Append to the list
 
         # Update min_z
-        if z < extremes.min_z:
+        if z < extremes.min_z - tolerance:
             extremes.min_z = z
             extremes.min_z_surfaces = [surface]  # Reset the list
         elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
-            extremes.min_z_surfaces.append(surface)  # Add to the list
+            extremes.min_z_surfaces.append(surface)  # Append to the list
 
         # Update max_z
-        if z > extremes.max_z:
+        if z > extremes.max_z + tolerance:
             extremes.max_z = z
             extremes.max_z_surfaces = [surface]  # Reset the list
         elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
-            extremes.max_z_surfaces.append(surface)  # Add to the list
+            extremes.max_z_surfaces.append(surface)  # Append to the list
 
     return extremes
-
 
 def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTags):
     global_tags.min_x_surfaces = [*global_tags.min_x_surfaces,  *surface_data.min_x_surfaces]
@@ -249,11 +253,18 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # BACK AND FRONT FACE OF SOIL
     
-
-    physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FORCE",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.force,
-    ))  # TOP FACE OF PILE
+    if getattr(params, 'prescribed_force', None):
+        physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FORCE",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_force,
+        ))  # TOP FACE OF PILE
+    elif getattr(params, 'prescribed_disp', None):
+        physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FIX_X_1",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_disp,
+        ))  # TOP FACE OF PILE
+        
+        
     # Adding physical groups to Gmsh model
     physical_group_dimtag = {}
     for group in physical_groups:
@@ -270,7 +281,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         # gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
         gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 36)
-        gmsh.option.setNumber("Mesh.SaveAll", 1)
+        # gmsh.option.setNumber("Mesh.SaveAll", 1)
         gmsh.model.mesh.generate(3)
         gmsh.write(params.med_filepath.as_posix())
     except Exception as e:
@@ -281,6 +292,32 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         gmsh.finalize()
 
     return physical_groups
+
+
+def parse_read_med(params):
+    """
+    Parse the output log from read_med to extract meshset information.
+
+    Args:
+        params: Parameters including file paths and other necessary configurations.
+
+    Returns:
+        List[cm.MeshsetInfo]: List of MeshsetInfo objects.
+    """
+    meshsets = []
+    meshset_pattern = re.compile(r'\[read_med\] meshset .* msId (\d+) name (\w+)')
+    try:
+        with open(params.read_med_initial_log_file, 'r') as log_file:
+            for line in log_file:
+                match = meshset_pattern.search(line.strip())
+                if match:
+                    meshset_id = int(match.group(1))
+                    name = match.group(2)
+                    meshsets.append(cm.MeshsetInfo(meshset_id=meshset_id, name=name))
+    except IOError as e:
+        print(f"Error reading log file: {e}")
+    
+    return meshsets
 
 @ut.track_time("CHECKING BLOCK IDS")
 def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.PhysicalGroup]:
@@ -294,10 +331,9 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
     Returns:
         List[cm.PhysicalGroup]: Updated list of physical groups with corresponding meshnet IDs.
     """
-    log_file_path = 'read_med_initial_log_file.log'
 
     try:
-        with open(log_file_path, 'w') as log_file:
+        with open(params.read_med_initial_log_file, 'w') as log_file:
             subprocess.run(
                 ["read_med", "-med_file", params.med_filepath.as_posix()],
                 stdout=log_file,
@@ -354,13 +390,8 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
             f.writelines(blocks[i].formatted())
             
     return physical_groups + new_physical_groups
-    
         
-
-
-
-
-@ut.track_time("INJECTING CONFIG FILE")
+@ut.track_time("INJECTING CONFIG FILE with read_med")
 def inject_configs(params):
     """
     Inject boundary conditions from a .cfg file into a .med file and convert to a .h5m file.
@@ -371,44 +402,116 @@ def inject_configs(params):
     try:
         subprocess.run(
             ["read_med", 
-             "-med_file", params.med_filepath.as_posix(), 
-             "-output_file", params.h5m_filepath.as_posix(), 
-             "-meshnets_config", params.config_file.as_posix()],
+             "-med_file", f"{params.med_filepath}", 
+             "-output_file", f"{params.h5m_filepath}", 
+             "-meshsets_config", f"{params.config_file}", #remember it is meshsets not meshnets
+             "-log_sl" "inform"],
             check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Error injecting configs: {e}")
-        raise
+        raise RuntimeError(f"Error injecting configs: {e}")
 
 
-
-
-def parse_read_med(params):
-    """
-    Parse the output log from read_med to extract meshset information.
-
-    Args:
-        params: Parameters including file paths and other necessary configurations.
-
-    Returns:
-        List[cm.MeshsetInfo]: List of MeshsetInfo objects.
-    """
-    meshsets = []
-    meshset_pattern = re.compile(r'\[read_med\] meshset .* msId (\d+) name (\w+)')
-    
-    log_file_path = 'read_med_initial_log_file.log'
+@ut.track_time("PARTITIONING MESH with mofem_part")
+def partition_mesh(params):
     try:
-        with open(log_file_path, 'r') as log_file:
-            for line in log_file:
-                match = meshset_pattern.search(line.strip())
-                if match:
-                    meshset_id = int(match.group(1))
-                    name = match.group(2)
-                    meshsets.append(cm.MeshsetInfo(meshset_id=meshset_id, name=name))
-    except IOError as e:
-        print(f"Error reading log file: {e}")
+        subprocess.run(
+                    [
+                f'{params.um_view}/bin/mofem_part', 
+                '-my_file', f'{params.h5m_filepath}',
+                '-my_nparts', f'{params.nproc}',
+                '-output_file', f'{params.part_file}',
+                '-dim', f'3',
+                '-adj_dim', f'2',
+            ],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Error partitioning mesh: {e}")
+
+def replace_template_sdf(params):
+    regex = r"\{(.*?)\}"
+    # print(os.getcwd())
+    with open(params.template_sdf_file) as infile, open(params.sdf_file, 'w') as outfile:
+        for line in infile:
+            matches = re.finditer(regex, line, re.DOTALL)
+            for match in matches:
+                for name in match.groups():
+                    src = "{" + name + "}"
+                    target = str(1) #1 is a placeholder because it is not being used
+                    line = line.replace(src, target)
+            outfile.write(line)
+
+@ut.track_time("COMPUTING")
+def mofem_compute(params):
+    result = subprocess.run("rm -rf out*", shell=True, text=True)
+    # !rm -rf out*
+    replace_template_sdf(params)
     
-    return meshsets
+    mfront_arguments = []
+    for physical_group in params.physical_groups:
+        if physical_group.name.startswith("MFRONT_MAT"):
+            mfront_block_id = physical_group.meshnet_id
+            mi_block = "LinearElasticity"
+            mi_param_0 = physical_group.props[cm.PropertyTypeEnum.elastic].youngs_modulus
+            mi_param_1 = physical_group.props[cm.PropertyTypeEnum.elastic].poisson_ratio
+            mi_param_2 = 0
+            mi_param_3 = 0
+            mi_param_4 = 0
+            
+            mfront_arguments.append(
+                f"-mi_lib_path_{mfront_block_id} {params.um_view}/mfront_interface/libBehaviour.so "
+                f"-mi_block_{mfront_block_id} {mi_block} "
+                f"-mi_param_{mfront_block_id}_0 {mi_param_0} "
+                f"-mi_param_{mfront_block_id}_1 {mi_param_1} "
+                f"-mi_param_{mfront_block_id}_2 {mi_param_2} "
+                f"-mi_param_{mfront_block_id}_3 {mi_param_3} "
+                f"-mi_param_{mfront_block_id}_4 {mi_param_4} "
+            )
+    
+    # Join mfront_arguments list into a single string
+    mfront_arguments_str = ' '.join(mfront_arguments)
+
+
+    command = (
+        f"export OMPI_MCA_btl_vader_single_copy_mechanism=none && "
+        f"nice -n 10 mpirun --oversubscribe --allow-run-as-root "
+        f"-np {params.nproc} {params.um_view}/tutorials/adv-1/contact_3d "
+        f"-file_name {params.part_file} "
+        f"-sdf_file {params.sdf_file} "
+        f"-order {params.order} "
+        f"-contact_order 0 "
+        f"-sigma_order 0 " #play around this in the future?
+        f"-ts_dt {params.time_step} "
+        f"-ts_max_time {params.final_time} "
+        f"{mfront_arguments_str} "
+        f"-mi_save_volume 1 "
+        f"-mi_save_gauss 0 "
+        f"2>&1 | tee {params.log_file}"
+    )
+
+    result = subprocess.run(command, shell=True, text=True)
+
+@ut.track_time("CONVERTING FROM .htm TO .vtk")
+def export_to_vtk(params):
+    out_to_vtk = subprocess.run("ls -c1 out_*h5m", shell=True, text=True, capture_output=True)
+    # Check if the command was successful
+    if out_to_vtk.returncode == 0:
+        # Split the output by lines to get the list of files
+        list_of_files = out_to_vtk.stdout.splitlines()
+
+        # Print the list of .h5m files
+        print(f"List of .h5m files: {list_of_files}")
+
+        # Get the last file from the list
+        last_file = list_of_files[0]
+
+        # Run mbconvert with the last file
+        subprocess.run(f"mbconvert {last_file} {params.vtk_filepath}", shell=True, text=True)
+    else:
+        print("Error: Could not list files.")
+
+
 
 def get_meshset_by_name(meshsets: List[cm.MeshsetInfo], name: str) -> Optional[cm.MeshsetInfo]:
     """
@@ -457,33 +560,9 @@ def parse_log_file(params):
 
 @ut.track_time("CLEARING MAIN LOG FILE BEFORE RUNNING MOFEM")
 def clear_main_log(params):
-    # show_file = params.show_file
-    # if os.path.exists(show_file):
-    #     if os.path.isdir(show_file):
-    #         # If it is a directory, use shutil.rmtree to remove it and its contents
-    #         shutil.rmtree(show_file)
-    #     else:
-    #         # If it is a file, use os.remove to delete it
-    #         os.remove(show_file)
-    # else:
-    #     print(f"The file or directory {show_file} does not exist")
     open(params.log_file, 'w').close() #clear log file
       
-@ut.print_message_in_box("PARTITIONING MESH with mofem_part")
-def partition_mesh(params):
-    command_1 = [
-        '/mofem_install/um_view/bin/mofem_part', 
-        '-my_file', f'{params.h5m_filepath.as_posix()}',
-        '-output_file', f'{params.h5m_filepath.as_posix()}',
-        '-my_nparts', str(params.nproc),
-    ]
-    with open(params.log_file, 'a') as log_file:  # Open in append mode after clearing
-        run_command(1, command_1, log_file)
-
-
-
-
 def test():
-    print('Hello world!')
+    print('Imported modules')
 # if __name__ == "__main__":
 #     params = AttrDict()

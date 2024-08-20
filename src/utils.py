@@ -28,7 +28,7 @@ def print_message_in_box(message: str) -> Callable:
             return func(*args, **kwargs)
         return wrapper
     return decorator
-    
+
 def track_time(message: str) -> Callable:
     """
     Decorator that prints a message and tracks the execution time of a function.
@@ -42,7 +42,18 @@ def track_time(message: str) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            print_message_in_box(message)
+            # Calculate the length of the message and adjust the border length accordingly
+            message_length = len(message)
+            border_length = message_length + 4  # Adjust for padding and borders
+            top_border = "╭" + "─" * border_length + "╮"
+            middle_line = f"│  {message}  │"
+            bottom_border = "╰" + "─" * border_length + "╯"
+            
+            # Print the formatted message
+            print(top_border)
+            print(middle_line)
+            print(bottom_border)
+            
             start_wall_time = time.time()
             start_cpu_time = time.process_time()
             result = func(*args, **kwargs)
@@ -52,5 +63,4 @@ def track_time(message: str) -> Callable:
             return result
         return wrapper
     return decorator
-
 

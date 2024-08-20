@@ -76,6 +76,11 @@ class CamClayProperties(MaterialProperty):
     a: float = 0
     b: float = 0
     RG_min: float = 0
+    X: float = 0.548 
+    Y: float = 0.698
+    Z: float = 0.100
+            
+    
     
     
 
