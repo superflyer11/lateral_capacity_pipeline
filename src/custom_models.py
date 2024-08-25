@@ -1,10 +1,12 @@
 import math
-from typing import Any, Dict, List, Optional
+from enum import Enum
+# from enum import IntEnum, StrEnum
+from typing import Any, Dict, List, Union, Optional
 from typing_extensions import Self
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny
 import gmsh
 from enum import Enum
-    
+
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
     max_x_surfaces: list = []
@@ -18,16 +20,36 @@ class SurfaceTags(BaseModel):
     max_y: float = float('-inf')
     min_z: float = float('inf')
     max_z: float = float('-inf')
+    
+class CurveTags(BaseModel):
+    min_x_curves: list = []
+    max_x_curves: list = []
+    min_y_curves: list = []
+    max_y_curves: list = []
+    min_z_curves: list = []
+    max_z_curves: list = []
+    min_x: float = float('inf')
+    max_x: float = float('-inf')
+    min_y: float = float('inf')
+    max_y: float = float('-inf')
+    min_z: float = float('inf')
+    max_z: float = float('-inf')
+
 
 class GeometryTagManager(BaseModel):
     soil_volumes: list 
     pile_volumes: list 
+    interface_volumes: list
     soil_surfaces: SurfaceTags
     pile_surfaces: SurfaceTags
+    interface_surfaces: SurfaceTags
 
 
-class BoundaryCondition(BaseModel):
-    pass
+class BoundaryCondition(BaseModel): pass
+    # model_config = ConfigDict(extra='allow')
+
+    # def model_dump(self):
+    #     return self.dict()
 
 class NodeBoundaryCondition(BoundaryCondition):
     disp_ux: float = 0
@@ -43,19 +65,22 @@ class SurfaceBoundaryCondition(BoundaryCondition):
     disp_ux: float = 0
     disp_uy: float = 0
     disp_uz: float = 0
-    
+
 class ForceBoundaryCondition(BoundaryCondition):
     fx: int = 0
     fy: int = 0
     fz: int = 0
 
-class PropertyTypeEnum(Enum):
-    elastic = 1
-    drucker_prager = 2
-    cam_clay = 3
+class PropertyTypeEnum(str, Enum):
+    elastic = "elastic"
+    drucker_prager = "drucker_prager"
+    cam_clay = "cam_clay"
 
-class MaterialProperty(BaseModel):
+class MaterialProperty(BaseModel): 
+    # model_config = ConfigDict(extra='allow') 
     pass
+    # def model_dump(self):
+    #     return self.dict()
     
 class LinearElasticProperties(MaterialProperty):
     youngs_modulus: float
@@ -69,9 +94,6 @@ class CamClayProperties(MaterialProperty):
     hvorslev_shape_n: float = 0
     hvorslev_plastic_potential_beta: float = 0
     hvorslev_plastic_potential_m: float = 0
-    v0: float = 0
-    la: float = 0
-    ka: float = 0
     G_0: float = 0
     a: float = 0
     b: float = 0
@@ -79,15 +101,26 @@ class CamClayProperties(MaterialProperty):
     X: float = 0.548 
     Y: float = 0.698
     Z: float = 0.100
-            
+    v: float = 0.3
+    M: float = 1.2
+    la: float = 7.7*(10**(-2))
+    ka: float = 6.6*(10**(-3))
+    v0: float = 1.7857
+    pc0: float = 200*(10**3)
+
     
-    
+
     
 
 class SoilLayer(BaseModel):
     depth: float
-    linear_elastic_properties: LinearElasticProperties
-    mcc_properties: CamClayProperties = CamClayProperties()
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    props: dict[PropertyTypeEnum, MaterialProperty]
+    # linear_elastic_properties: LinearElasticProperties
+    # mcc_properties: CamClayProperties = CamClayProperties()
+    
+    class Config:  
+        use_enum_values = True  # <--
 
 class BC_CONFIG_BLOCK(BaseModel):
     block_name: str
@@ -107,7 +140,7 @@ class BC_CONFIG_BLOCK(BaseModel):
 # {self.comment}
 number_of_attributes={self.number_of_attributes}\n""" + attrs
         return block
-    
+
 class MFRONT_CONFIG_BLOCK(BaseModel):
     block_name: str
     comment: str
@@ -133,7 +166,7 @@ class BoxManager(BaseModel):
     far_field_size: float = 5
     near_field_dist: float = 40
     near_field_size: float = 1
-    layers: Dict[int, SoilLayer]
+    layers: list[SoilLayer]
     
     
     @property
@@ -146,7 +179,7 @@ class BoxManager(BaseModel):
 
     @property
     def min_z(self) -> float:
-        total_depth = sum(layer.depth for layer in self.layers.values())
+        total_depth = sum(layer.depth for layer in self.layers)
         return total_depth + self.max_z
 
     @property
@@ -187,9 +220,11 @@ class BoxManager(BaseModel):
     
     def add_layer(self, box: SoilLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.depth)
+        
+        
         self.new_layer_z += box.depth
         return layer_tag
-    
+
 
 class PileManager(BaseModel):
     x: float
@@ -200,12 +235,18 @@ class PileManager(BaseModel):
     dz: float 
     R: float
     r: float
-    linear_elastic_properties: LinearElasticProperties
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
+    # linear_elastic_properties: LinearElasticProperties
+    
+    class Config:  
+        use_enum_values = True  # <--
     
     def addPile(self):
+        interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+(self.R-self.r), angle= 2*math.pi)
         outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
-        return [outer_tag, inner_tag]
+        return [interface_tag, outer_tag, inner_tag]
     
     # def create_CFGBLOCK(self) -> MFRONT_CONFIG_BLOCK:
     #     block = MFRONT_CONFIG_BLOCK(
@@ -216,7 +257,7 @@ class PileManager(BaseModel):
     #         self.linear_elastic_properties.poisson_ratio,
     #     ])
     #     return block
-    
+
 class MeshsetInfo(BaseModel):
     meshset_id: int
     name: str
@@ -231,13 +272,14 @@ class PhysicalGroup(BaseModel):
     name: str
     meshnet_id: Optional[int] = None
     group_type: PhysicalGroupType
-    props: Dict[PropertyTypeEnum, MaterialProperty] = {} 
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    props: dict[PropertyTypeEnum, MaterialProperty] = {} 
     bc: Optional[BoundaryCondition] = None
     
     def verify(self):
         if meshnet_id == None:
             raise ValueError('Missing meshnet_id')  
-    
+
 
 if __name__ == "__main__":
     if not gmsh.isInitialized():
@@ -273,4 +315,4 @@ if __name__ == "__main__":
     # contact_arc
     gmsh.write("/mofem_install/jupyter/thomas/mfront_example_test/test_data/123.med")
     gmsh.finalize()
-    
+

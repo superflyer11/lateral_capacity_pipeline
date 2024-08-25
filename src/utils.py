@@ -2,6 +2,28 @@ import time
 from typing import Callable, Any
 from functools import wraps
 
+
+# @track_time("RUNNING COMMAND...")
+def run_command(index, command, log_file):
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    
+    while process.poll() is None:
+        output = process.stdout.readline()
+        if output:
+            log_file.write(output)
+            log_file.flush()
+            sys.stdout.write(output)
+            sys.stdout.flush()
+    
+    # Capture remaining output after process ends
+    for output in process.stdout.readlines():
+        log_file.write(output)
+        log_file.flush()
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    
+    return process
+
 def print_message_in_box(message: str) -> Callable:
     """
     A decorator that prints a message within a box of ASCII characters before executing the function.

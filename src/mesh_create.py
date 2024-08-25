@@ -15,31 +15,6 @@ import pyvista as pv
 import custom_models as cm
 import utils as ut
 
-
-
-@ut.track_time("RUNNING COMMAND...")
-def run_command(index, command, log_file):
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    
-    while process.poll() is None:
-        output = process.stdout.readline()
-        if output:
-            log_file.write(output)
-            log_file.flush()
-            sys.stdout.write(output)
-            sys.stdout.flush()
-    
-    # Capture remaining output after process ends
-    for output in process.stdout.readlines():
-        log_file.write(output)
-        log_file.flush()
-        sys.stdout.write(output)
-        sys.stdout.flush()
-    
-    return process
-
-
-# os.chdir("/mofem_install/um-build-Release-u3my3yi/tutorials/vec-10000")
 class AttrDict(dict):
     def __getattr__(self, attr):
         if attr in self:
@@ -63,34 +38,55 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     """
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
-    
+    gmsh.option.setNumber("Geometry.OCCBooleanPreserveNumbering", 1)
+    # gmsh.option.setNumber("Mesh.Algorithm", 11)
+    gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
+    # gmsh.option.setNumber('Mesh.RecombineAll', 1)
+    # gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 1)
 
 
     gmsh.model.add(f"{params.mesh_name}")
 
     soil_layer_tags = []
     # Add boxes for the layers
-    for no, layer in params.box_manager.layers.items():
+    for layer in params.box_manager.layers:
         new_tag = params.box_manager.add_layer(layer)
         soil_layer_tags.append(new_tag)
-
-    
-    
-    outer_cylinder_tag, inner_cylinder_tag = params.pile_manager.addPile()
+       
+    interface_tag, outer_cylinder_tag, inner_cylinder_tag = params.pile_manager.addPile()
 
     # Cut the soil blocks with the pile
     DIM = 3
     cut_soil_tags, _ = gmsh.model.occ.cut(
         [[3, tag] for tag in soil_layer_tags],
-        [[3, outer_cylinder_tag]],
+        [[3, interface_tag]],
         -1,
         removeObject=True,
         removeTool=False,
     )
     cut_soil_boxes = [tag for _, tag in cut_soil_tags]
 
-    symmetry_cutter_tag = gmsh.model.occ.addBox(-200, 0, -200, 400, 400, 400)
+    symmetry_cutter_tag = gmsh.model.occ.addBox(params.box_manager.min_x-200, 0, params.box_manager.min_z-200, params.box_manager.max_x+400, params.box_manager.max_y+400, params.box_manager.max_z+400)
 
+    interface_tags, _ = gmsh.model.occ.cut(
+        [[3, interface_tag]],
+        [[3, outer_cylinder_tag]],
+        -1,
+        removeObject=True,
+        removeTool=False,
+    )
+    interface_vols = [tag for dim, tag in interface_tags]
+    
+    interface_tags, _ = gmsh.model.occ.cut(
+        [[3, tag] for tag in interface_vols],
+        [[3, symmetry_cutter_tag]],
+        -1,
+        removeObject=True,
+        removeTool=False,
+    )
+    
+    interface_vols = [tag for dim, tag in interface_tags]
+        
     # Cut the outer cylinder with the inner cylinder to form the pile
     cut_pile_tags, _ = gmsh.model.occ.cut(
         [[3, outer_cylinder_tag]],
@@ -116,23 +112,42 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     gmsh.model.occ.removeAllDuplicates()
     gmsh.model.occ.synchronize()
     
+    # for soil_box in cut_soil_boxes:
+    #     bounding_box = gmsh.model.getBoundingBox(3, soil_box)
+    #     print(bounding_box)
+    #     NN = 10
+    #     for c in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 1):
+    #         gmsh.model.mesh.setTransfiniteCurve(c[1], NN)
     
+    print(cut_soil_boxes)
+    print(pile_vols)
     
+    tests = gmsh.model.getEntitiesInBoundingBox(-200, -200, -200, 400, 400, 400, 3)
+    print(tests)
+    # for v in tests:
+    #     gmsh.model.mesh.setTransfiniteVolume(v[1])
+
+    # sys.exit()
     soil_surface_tags = cm.SurfaceTags()
     for soil_box in cut_soil_boxes:
         surface_data = get_surface_extremes(soil_box)
         update_surface_tags(soil_surface_tags, surface_data)
 
     pile_surface_tags = cm.SurfaceTags()
-    pile_surface_tags = cm.SurfaceTags()
     pile_surface_data = get_surface_extremes(pile_vols[0])
     update_surface_tags(pile_surface_tags, pile_surface_data)
-
+    
+    interface_surface_tags = cm.SurfaceTags()
+    interface_surface_data = get_surface_extremes(interface_vols[0])
+    update_surface_tags(pile_surface_tags, interface_surface_data)
+    
     geometry_tag_manager = cm.GeometryTagManager(
         soil_volumes=cut_soil_boxes,
         pile_volumes=pile_vols,
+        interface_volumes = interface_vols,
         soil_surfaces=soil_surface_tags,
         pile_surfaces=pile_surface_tags,
+        interface_surfaces=interface_surface_tags,
     )
     gmsh.model.occ.synchronize()
     
@@ -209,6 +224,64 @@ def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTag
         global_tags.max_z_surfaces = surface_data.max_z_surfaces
         global_tags.max_z = surface_data.max_z
 
+#this is not used
+def get_edge_extremes(volume: int) -> cm.SurfaceTags:
+    curveLoopTags, curveTags = gmsh.model.occ.getCurveLoops(volume)
+    curveTags = list(curveTags[0])
+    
+    extremes = cm.CurveTags()
+
+    # Define a small tolerance for floating-point comparison
+    tolerance = 1e-5
+    
+    for curve in curveTags:
+        x, y, z = gmsh.model.occ.getCenterOfMass(1, curve)
+        
+        # Update min_x
+        if x < extremes.min_x - tolerance:
+            extremes.min_x = x
+            extremes.min_x_curves = [curve]  # Reset the list
+        elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
+            extremes.min_x_curves.append(curve)  # Append to the list
+
+        # Update max_x
+        if x > extremes.max_x + tolerance:
+            extremes.max_x = x
+            extremes.max_x_curves = [curve]  # Reset the list
+        elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
+            extremes.max_x_curves.append(curve)  # Append to the list
+
+        # Update min_y
+        if y < extremes.min_y - tolerance:
+            extremes.min_y = y
+            extremes.min_y_curves = [curve]  # Reset the list
+        elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
+            extremes.min_y_curves.append(curve)  # Append to the list
+
+        # Update max_y
+        if y > extremes.max_y + tolerance:
+            extremes.max_y = y
+            extremes.max_y_curves = [curve]  # Reset the list
+        elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
+            extremes.max_y_curves.append(curve)  # Append to the list
+
+        # Update min_z
+        if z < extremes.min_z - tolerance:
+            extremes.min_z = z
+            extremes.min_z_curves = [curve]  # Reset the list
+        elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
+            extremes.min_z_curves.append(curve)  # Append to the list
+
+        # Update max_z
+        if z > extremes.max_z + tolerance:
+            extremes.max_z = z
+            extremes.max_z_curves = [curve]  # Reset the list
+        elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
+            extremes.max_z_curves.append(curve)  # Append to the list
+
+    return extremes
+
+
 @ut.track_time("ADDING PHYSICAL GROUPS TO MESH")
 def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalGroup]:
     """
@@ -222,15 +295,22 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         List[cm.PhysicalGroup]: List of physical groups added to the mesh.
     """
     physical_groups = []
-
-    for i in range(1, 5):
+    
+    for i in range(len(geo.soil_volumes)):
         physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i-1]], name=f"SOIL_LAYER_{i}",
-            group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.box_manager.layers[i].linear_elastic_properties}
+            dim=3, tags=[geo.soil_volumes[i]], name=f"SOIL_LAYER_{i}",
+            preferred_model = params.box_manager.layers[i].preferred_model,
+            group_type=cm.PhysicalGroupType.MATERIAL, props=params.box_manager.layers[i].props,
         ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.pile_volumes, name="CYLINDER",
-        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: params.pile_manager.linear_elastic_properties},gmsh_tag=5,
+            preferred_model = params.pile_manager.preferred_model,
+        group_type=cm.PhysicalGroupType.MATERIAL, props=params.pile_manager.props,
+    ))
+    physical_groups.append(cm.PhysicalGroup(
+        dim=3, tags=geo.interface_volumes, name="INTERFACE",
+            preferred_model = cm.PropertyTypeEnum.elastic,
+        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: cm.LinearElasticProperties(youngs_modulus=10*10**6, poisson_ratio=0.3)},
     ))
 
     # Adding boundary condition physical groups
@@ -248,7 +328,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     ))  # BOTTOM FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=[*geo.soil_surfaces.min_y_surfaces, *geo.soil_surfaces.max_y_surfaces, 
-                     *geo.pile_surfaces.max_y_surfaces,
+                     *geo.pile_surfaces.max_y_surfaces, *geo.interface_surfaces.max_y_surfaces,
                      ], name="FIX_Y_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # BACK AND FRONT FACE OF SOIL
@@ -273,16 +353,39 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
             tags=group.tags,
             name=group.name,
         ))
+    
+        
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.min_x, params.box_manager.min_y, params.box_manager.min_z, params.box_manager.max_x, params.box_manager.max_y, params.box_manager.max_z), params.box_manager.far_field_size)
     gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
     # Setting Gmsh options and generating mesh
     try:
-        # gmsh.model.occ.synchronize()
-        # gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
         gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 36)
         # gmsh.option.setNumber("Mesh.SaveAll", 1)
+
         gmsh.model.mesh.generate(3)
+        # gmsh.model.mesh.recombine()
+        # # ======================== ======================== ========================
+        # for soil_box in geo.soil_volumes:
+        #     bounding_box = gmsh.model.getBoundingBox(3, soil_box)
+        #     print(bounding_box)
+        #     NN = 10
+        #     for c in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 1):
+        #         gmsh.model.mesh.setTransfiniteCurve(c[1], NN)
+        #     for s in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 2):
+        #         gmsh.model.mesh.setTransfiniteSurface(s[1])
+        #         gmsh.model.mesh.setRecombine(2, s[1])
+        #         # gmsh.model.mesh.setSmoothing(s[0], s[1], 100)
+        #         # gmsh.model.mesh.setTransfiniteVolume(cut_soil_boxes[i-1])
+        # # gmsh.model.occ.synchronize()
+        # # ======================== ======================== ========================
+        # tests = gmsh.model.getEntitiesInBoundingBox(-200, -200, -200, 400, 400, 400, 3)
+        # print(tests)
+        # for v in tests:
+        #     gmsh.model.mesh.setTransfiniteVolume(v[1])
+        gmsh.model.mesh.generate(3)
+        
+        
         gmsh.write(params.med_filepath.as_posix())
     except Exception as e:
         print(f"An error occurred during mesh generation: {e}")
@@ -341,17 +444,17 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
                 check=True
             )
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred while running read_med: {e}")
+        raise RuntimeError(f"An error occurred while running read_med: {e}")
         return physical_groups
     except IOError as e:
-        print(f"An error occurred while writing to the log file: {e}")
+        raise RuntimeError(f"An error occurred while writing to the log file: {e}")
         return physical_groups
 
     meshnets = parse_read_med(params)
 
     # Create a dictionary mapping name to meshnet_id
     meshnet_mapping = {meshnet.name: meshnet.meshset_id for meshnet in meshnets}
-
+    print(meshnet_mapping)
     # Update physical_groups with the corresponding meshnet_id
     for group in physical_groups:
         if group.name in meshnet_mapping:
@@ -365,7 +468,6 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
     new_physical_groups: List[cm.PhysicalGroup] = []
     for i in range(len(physical_groups)):
         if physical_groups[i].group_type == cm.PhysicalGroupType.BOUNDARY_CONDITION:
-            print(physical_groups[i].bc.dict())
             blocks.append(cm.BC_CONFIG_BLOCK(
                 block_name = f"SET_ATTR_{physical_groups[i].name}",
                 comment = f"Boundary condition for {physical_groups[i].name}",
@@ -373,9 +475,7 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
                 attributes = list(physical_groups[i].bc.dict().values()),
             ))
             
-        #very messy!
         elif physical_groups[i].group_type == cm.PhysicalGroupType.MATERIAL:
-            print(physical_groups[i])
             new_physical_group = physical_groups[i].model_copy(deep=True, update={'meshnet_id': physical_groups[i].meshnet_id + 100, 'name': f"MFRONT_MAT_{physical_groups[i].meshnet_id}"})
             new_physical_groups.append(new_physical_group)
             blocks.append(cm.MFRONT_CONFIG_BLOCK(
@@ -442,6 +542,7 @@ def replace_template_sdf(params):
                     line = line.replace(src, target)
             outfile.write(line)
 
+
 @ut.track_time("COMPUTING")
 def mofem_compute(params):
     result = subprocess.run("rm -rf out*", shell=True, text=True)
@@ -452,21 +553,39 @@ def mofem_compute(params):
     for physical_group in params.physical_groups:
         if physical_group.name.startswith("MFRONT_MAT"):
             mfront_block_id = physical_group.meshnet_id
-            mi_block = "LinearElasticity"
-            mi_param_0 = physical_group.props[cm.PropertyTypeEnum.elastic].youngs_modulus
-            mi_param_1 = physical_group.props[cm.PropertyTypeEnum.elastic].poisson_ratio
+            mi_param_0 = 0
+            mi_param_1 = 0
             mi_param_2 = 0
             mi_param_3 = 0
             mi_param_4 = 0
-            
+            mi_param_5 = 0
+            if physical_group.preferred_model == cm.PropertyTypeEnum.elastic:
+                mi_block = "LinearElasticity"
+                mi_param_0 = physical_group.props[cm.PropertyTypeEnum.elastic].youngs_modulus
+                mi_param_1 = physical_group.props[cm.PropertyTypeEnum.elastic].poisson_ratio
+                mi_param_2 = 0
+                mi_param_3 = 0
+                mi_param_4 = 0
+            elif physical_group.preferred_model == cm.PropertyTypeEnum.cam_clay:
+                # mi_block = "ModCamClay_semiExpl_absP"
+                mi_block = "ModCamClay_semiExpl"
+                mi_param_0 = physical_group.props[cm.PropertyTypeEnum.cam_clay].v
+                mi_param_1 = physical_group.props[cm.PropertyTypeEnum.cam_clay].M
+                mi_param_2 = physical_group.props[cm.PropertyTypeEnum.cam_clay].ka
+                mi_param_3 = physical_group.props[cm.PropertyTypeEnum.cam_clay].la
+                mi_param_4 = physical_group.props[cm.PropertyTypeEnum.cam_clay].pc0
+                mi_param_5 = physical_group.props[cm.PropertyTypeEnum.cam_clay].v0
+            else:
+                raise NotImplementedError(f"The model {physical_group.preferred_model} chosen in {physical_group.name} has not yet been implemented yet")
             mfront_arguments.append(
-                f"-mi_lib_path_{mfront_block_id} {params.um_view}/mfront_interface/libBehaviour.so "
+                f"-mi_lib_path_{mfront_block_id} /mofem_install/jupyter/thomas/mfront_interface/src/libBehaviour.so "
                 f"-mi_block_{mfront_block_id} {mi_block} "
                 f"-mi_param_{mfront_block_id}_0 {mi_param_0} "
                 f"-mi_param_{mfront_block_id}_1 {mi_param_1} "
                 f"-mi_param_{mfront_block_id}_2 {mi_param_2} "
                 f"-mi_param_{mfront_block_id}_3 {mi_param_3} "
                 f"-mi_param_{mfront_block_id}_4 {mi_param_4} "
+                f"-mi_param_{mfront_block_id}_5 {mi_param_5} "
             )
     
     # Join mfront_arguments list into a single string
