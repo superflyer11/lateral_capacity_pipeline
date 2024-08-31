@@ -309,8 +309,8 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
     ))
     physical_groups.append(cm.PhysicalGroup(
         dim=3, tags=geo.interface_volumes, name="INTERFACE",
-            preferred_model = cm.PropertyTypeEnum.elastic,
-        group_type=cm.PhysicalGroupType.MATERIAL, props={cm.PropertyTypeEnum.elastic: cm.LinearElasticProperties(youngs_modulus=10*10**6, poisson_ratio=0.3)},
+            preferred_model = params.interface_manager.preferred_model,
+        group_type=cm.PhysicalGroupType.MATERIAL, props=params.interface_manager.props,
     ))
 
     # Adding boundary condition physical groups
@@ -553,30 +553,14 @@ def mofem_compute(params):
     for physical_group in params.physical_groups:
         if physical_group.name.startswith("MFRONT_MAT"):
             mfront_block_id = physical_group.meshnet_id
-            mi_param_0 = 0
-            mi_param_1 = 0
-            mi_param_2 = 0
-            mi_param_3 = 0
-            mi_param_4 = 0
-            mi_param_5 = 0
-            if physical_group.preferred_model == cm.PropertyTypeEnum.elastic:
-                mi_block = "LinearElasticity"
-                mi_param_0 = physical_group.props[cm.PropertyTypeEnum.elastic].youngs_modulus
-                mi_param_1 = physical_group.props[cm.PropertyTypeEnum.elastic].poisson_ratio
-                mi_param_2 = 0
-                mi_param_3 = 0
-                mi_param_4 = 0
-            elif physical_group.preferred_model == cm.PropertyTypeEnum.cam_clay:
-                # mi_block = "ModCamClay_semiExpl_absP"
-                mi_block = "ModCamClay_semiExpl"
-                mi_param_0 = physical_group.props[cm.PropertyTypeEnum.cam_clay].v
-                mi_param_1 = physical_group.props[cm.PropertyTypeEnum.cam_clay].M
-                mi_param_2 = physical_group.props[cm.PropertyTypeEnum.cam_clay].ka
-                mi_param_3 = physical_group.props[cm.PropertyTypeEnum.cam_clay].la
-                mi_param_4 = physical_group.props[cm.PropertyTypeEnum.cam_clay].pc0
-                mi_param_5 = physical_group.props[cm.PropertyTypeEnum.cam_clay].v0
-            else:
-                raise NotImplementedError(f"The model {physical_group.preferred_model} chosen in {physical_group.name} has not yet been implemented yet")
+            mi_block = physical_group.preferred_model.value
+            mi_param_0 = physical_group.props[physical_group.preferred_model].mi_param_0
+            mi_param_1 = physical_group.props[physical_group.preferred_model].mi_param_1
+            mi_param_2 = physical_group.props[physical_group.preferred_model].mi_param_2
+            mi_param_3 = physical_group.props[physical_group.preferred_model].mi_param_3
+            mi_param_4 = physical_group.props[physical_group.preferred_model].mi_param_4
+            mi_param_5 = physical_group.props[physical_group.preferred_model].mi_param_5
+    
             mfront_arguments.append(
                 f"-mi_lib_path_{mfront_block_id} /mofem_install/jupyter/thomas/mfront_interface/src/libBehaviour.so "
                 f"-mi_block_{mfront_block_id} {mi_block} "

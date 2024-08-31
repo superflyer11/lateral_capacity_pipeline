@@ -3,4 +3,4 @@
 out*
 simulations*
 data*
-src/__pycache__/ff
+src/__pycache__

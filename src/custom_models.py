@@ -71,23 +71,75 @@ class ForceBoundaryCondition(BoundaryCondition):
     fy: int = 0
     fz: int = 0
 
+# value should be the behvaiour name in mfront
 class PropertyTypeEnum(str, Enum):
-    elastic = "elastic"
-    drucker_prager = "drucker_prager"
-    cam_clay = "cam_clay"
+    elastic = "LinearElasticity" #good performance
+    saint_venant_kirchhoff = "SaintVenantKirchhoff" #slow
+    isotropic_hardening = "IsotropicLinearHardeningPlasticity" #not yet tested
+    drucker_prager = "DruckerPragerCap" # 'DruckerPragerCap' looks more adv but fails mfront integration
+    cam_clay = "ModCamClay_semiExpl" # none of them is working so far
 
-class MaterialProperty(BaseModel): 
+class MaterialProperty(BaseModel):
+    
+    @property
+    def mi_param_0(self) -> float: return 0
+    
+    @property
+    def mi_param_1(self) -> float: return 0
+    
+    @property
+    def mi_param_2(self) -> float: return 0
+    
+    @property
+    def mi_param_3(self) -> float: return 0
+    
+    @property
+    def mi_param_4(self) -> float: return 0
+    
+    @property
+    def mi_param_5(self) -> float: return 0
+    
     # model_config = ConfigDict(extra='allow') 
-    pass
     # def model_dump(self):
     #     return self.dict()
     
-class LinearElasticProperties(MaterialProperty):
+class ElasticProperties(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
+    
+    @property
+    def mi_param_0(self) -> float:
+        return self.youngs_modulus
 
-class DruckerPragerProperties(MaterialProperty):
+    @property
+    def mi_param_1(self) -> float:
+        return self.poisson_ratio
+    
+
+class DruckerPragerProperties(MaterialProperty): #elastic properties should suffice for druckerpragercap for now, but not sure
     pass
+
+class IsotropicLinearHardeningPlasticityProperties(MaterialProperty):
+    youngs_modulus: float
+    poisson_ratio: float
+    HardeningSlope: float
+    YieldStress: float
+    
+    @property
+    def mi_param_0(self) -> float:
+        return self.youngs_modulus
+
+    @property
+    def mi_param_1(self) -> float:
+        return self.poisson_ratio
+    
+    @property
+    def mi_param_2(self) -> float:
+        return self.HardeningSlope
+
+    @property
+    def mi_param_3(self) -> float:
+        return self.YieldStress
 
 class CamClayProperties(MaterialProperty):
     hvorslev_shape_alpha: float = 0
@@ -101,20 +153,38 @@ class CamClayProperties(MaterialProperty):
     X: float = 0.548 
     Y: float = 0.698
     Z: float = 0.100
-    v: float = 0.3
+    nu: float = 0.3
     M: float = 1.2
     la: float = 7.7*(10**(-2))
     ka: float = 6.6*(10**(-3))
     v0: float = 1.7857
     pc0: float = 200*(10**3)
-
+    pamb: float = 0.0
     
+    @property
+    def mi_param_0(self) -> float: return self.nu
+
+    @property
+    def mi_param_1(self) -> float: return self.M
+
+    @property
+    def mi_param_2(self) -> float: return self.ka
+
+    @property
+    def mi_param_3(self) -> float: return self.la
+
+    @property
+    def mi_param_4(self) -> float: return self.pc0
+
+    @property
+    def mi_param_5(self) -> float: return self.v0
+
 
     
 
 class SoilLayer(BaseModel):
     depth: float
-    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    preferred_model: PropertyTypeEnum
     props: dict[PropertyTypeEnum, MaterialProperty]
     # linear_elastic_properties: LinearElasticProperties
     # mcc_properties: CamClayProperties = CamClayProperties()
@@ -155,6 +225,9 @@ add=BLOCKSET
 name={self.name}
 """
         return block
+class InterfaceManager(BaseModel):
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
 
 class BoxManager(BaseModel):
     x: float
@@ -287,7 +360,7 @@ if __name__ == "__main__":
     gmsh.model.add(f"test")
 
     pile_manager = PileManager(x=0, y=0, z=10.5, dx=0, dy=0, dz=-20.5, R=1, r=0.975,
-                              elastic_properties=LinearElasticProperties(youngs_modulus=200 * (10 ** 9), poisson_ratio=0.3)
+                              elastic_properties=ElasticProperties(youngs_modulus=200 * (10 ** 9), poisson_ratio=0.3)
                               )
 
     outer_cylinder_tag, inner_cylinder_tag = pile_manager.addPile()
