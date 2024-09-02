@@ -597,22 +597,39 @@ def mofem_compute(params):
 
 @ut.track_time("CONVERTING FROM .htm TO .vtk")
 def export_to_vtk(params):
+    # Step 1: List all `out_*h5m` files and convert them to `.vtk` using `convert.py`
     out_to_vtk = subprocess.run("ls -c1 out_*h5m", shell=True, text=True, capture_output=True)
-    # Check if the command was successful
     if out_to_vtk.returncode == 0:
-        # Split the output by lines to get the list of files
-        list_of_files = out_to_vtk.stdout.splitlines()
-
-        # Print the list of .h5m files
-        print(f"List of .h5m files: {list_of_files}")
-
-        # Get the last file from the list
-        last_file = list_of_files[0]
-
-        # Run mbconvert with the last file
-        subprocess.run(f"mbconvert {last_file} {params.vtk_filepath}", shell=True, text=True)
+        convert_result = subprocess.run("convert.py -np 4 out_*h5m final.vtk", shell=True, text=True, capture_output=True)
+        if convert_result.returncode == 0:
+            print("Conversion to VTK successful.")
+        else:
+            print("Conversion to VTK failed.")
+            print(convert_result.stderr)
+            return
+        
+    # Step 2: List all `.vtk` files in the current directory
+    vtk_files = subprocess.run("ls -c1 *.vtk", shell=True, text=True, capture_output=True)
+    if vtk_files.returncode == 0:
+        vtk_files_list = vtk_files.stdout.splitlines()
+        if not vtk_files_list:
+            print("No .vtk files found.")
+            return
+        
+        # Step 3: Move each `.vtk` file to `params.data_dir`
+        for vtk_file in vtk_files_list:
+            try:
+                shutil.move(vtk_file, os.path.join(params.data_dir, vtk_file))
+                print(f"Moved {vtk_file} to {params.data_dir}")
+            except Exception as e:
+                print(f"Failed to move {vtk_file}: {e}")
     else:
-        print("Error: Could not list files.")
+        print("Failed to list .vtk files.")
+        print(vtk_files.stderr)
+
+    # Run mbconvert with the last file
+    # subprocess.run(f"mbconvert {last_file} {params.vtk_filepath}", shell=True, text=True)
+
 
 
 

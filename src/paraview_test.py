@@ -12,15 +12,14 @@ class AttrDict(dict):
     def __setattr__(self, key, value):
         self[key] = value
 
-@ut.track_time("EXTRACTING DATA FROM .vtk")
-def main(params):
-    if len(sys.argv) > 1:
-        # vtk_filepath = sys.argv[1] 
-        # data_dir = sys.argv[2] 
-        paraview.simple._DisableFirstRenderCameraReset()
-        renderView1 = GetActiveViewOrCreate('RenderView') #idk where to put this
-        
-        reader = LegacyVTKReader(registrationName=params.vtk_filepath, FileNames=[params.vtk_filepath])
+@ut.track_time("EXTRACTING GROUP DATA FROM .vtk")
+def to_time(params):    
+    paraview.simple._DisableFirstRenderCameraReset()
+    renderView1 = GetActiveViewOrCreate('RenderView') #idk where to put this
+    
+    vtk_files = subprocess.run(f"ls -c1 {params.data_dir}*.vtk", shell=True, text=True, capture_output=True)
+    if vtk_files.returncode == 0:
+        reader = LegacyVTKReader(registrationName=params.vtk_filepath, FileNames=[os.path.join(params.data_dir, vtk_file) for vtk_file in vtk_files])
         if reader:
             print("Success")
         else:
@@ -30,32 +29,37 @@ def main(params):
         extractSelection1 = ExtractSelection(registrationName='ExtractSelection1', Input=reader)
         # help(SaveData)
         # help(QuerySelect)
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_mudline.csv', proxy=extractSelection1, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'STRAIN', 'STRESS'])
-        
-        #data over on the compression
-        plotOverLine2 = PlotOverLine(registrationName='PlotOverLine2', Input=reader)
-        plotOverLine2.Point1 = [1.0, 0.0, 0.0]
-        plotOverLine2.Point2 = [1.0, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.csv', proxy=plotOverLine2, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
-        
-        #data over on the compression
-        plotOverLine3 = PlotOverLine(registrationName='PlotOverLine3', Input=reader)
-        plotOverLine3.Point1 = [1.1, 0.0, 0.0]
-        plotOverLine3.Point2 = [1.1, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.1.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
-        
-        
-        #data over on the tension
-        plotOverLine4 = PlotOverLine(registrationName='plotOverLine4', Input=reader)
-        plotOverLine4.Point1 = [-1.0, 0.0, 0.0]
-        plotOverLine4.Point2 = [-1.0, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_tension_x_-1.csv', proxy=plotOverLine4, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        SaveData(f'{params.data_dir}/dis_to_time_compression_mudline.csv', proxy=extractSelection1, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'STRAIN', 'STRESS'])
+    
+@ut.track_time("EXTRACTING GROUP DATA FROM .vtk")
+def to_depth(params):
+    reader = LegacyVTKReader(registrationName=params.vtk_filepath, FileNames=[params.vtk_filepath])
+    #data over on the compression
+    plotOverLine2 = PlotOverLine(registrationName='PlotOverLine2', Input=reader)
+    plotOverLine2.Point1 = [1.0, 0.0, 0.0]
+    plotOverLine2.Point2 = [1.0, 0.0, -40.0]
+    SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.csv', proxy=plotOverLine2, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+
+    #data over on the compression
+    plotOverLine3 = PlotOverLine(registrationName='PlotOverLine3', Input=reader)
+    plotOverLine3.Point1 = [1.1, 0.0, 0.0]
+    plotOverLine3.Point2 = [1.1, 0.0, -40.0]
+    SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.1.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+    
+    
+    #data over on the tension
+    plotOverLine4 = PlotOverLine(registrationName='plotOverLine4', Input=reader)
+    plotOverLine4.Point1 = [-1.0, 0.0, 0.0]
+    plotOverLine4.Point2 = [-1.0, 0.0, -40.0]
+    SaveData(f'{params.data_dir}/dis_to_depth_tension_x_-1.csv', proxy=plotOverLine4, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
         
 
 params = AttrDict()
 params.vtk_filepath = sys.argv[1] 
 params.data_dir = sys.argv[2] 
-main(params)
+if len(sys.argv) > 1:
+    to_time(params)
+    to_depth(params)
 
         
 # # create a query selection
