@@ -81,15 +81,15 @@ def calculate_and_plot_q_p(csv_files: dict[str, str], save_as: str):
     # plt.ylim(,0)
     for label, csv_filepath in csv_files.items():
         df = pd.read_csv(csv_filepath)
-        stress_xx = data['STRESS:0']
-        stress_xy = data['STRESS:1']
-        stress_xz = data['STRESS:2']
-        stress_yx = data['STRESS:3']
-        stress_yy = data['STRESS:4']
-        stress_yz = data['STRESS:5']
-        stress_zx = data['STRESS:6']
-        stress_zy = data['STRESS:7']
-        stress_zz = data['STRESS:8']
+        stress_xx = df['avg(STRESS (0))']
+        stress_xy = df['avg(STRESS (1))']
+        stress_xz = df['avg(STRESS (2))']
+        stress_yx = df['avg(STRESS (3))']
+        stress_yy = df['avg(STRESS (4))']
+        stress_yz = df['avg(STRESS (5))']
+        stress_zx = df['avg(STRESS (6))']
+        stress_zy = df['avg(STRESS (7))']
+        stress_zz = df['avg(STRESS (8))']
         p = (stress_xx + stress_yy + stress_zz) / 3.0
         q = np.sqrt(1.5 * (
             (stress_xx - p)**2 +
