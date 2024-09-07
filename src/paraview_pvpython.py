@@ -18,7 +18,7 @@ def to_time(params):
     paraview.simple._DisableFirstRenderCameraReset()
     renderView1 = GetActiveViewOrCreate('RenderView') #idk where to put this
     
-    vtk_files = subprocess.run(f"ls -c1 {params.data_dir}/*.vtk", shell=True, text=True, capture_output=True)
+    vtk_files = subprocess.run(f"ls -c1 {params.data_dir}/*.vtk | sort -V", shell=True, text=True, capture_output=True)
     if vtk_files.returncode == 0:
         
         files = [vtk_file for vtk_file in vtk_files.stdout.splitlines()]
@@ -27,22 +27,33 @@ def to_time(params):
             print("Read Success")
         else:
             print("Read Failed")
-        #getting a single point at mudline compression
         sel1 = QuerySelect(QueryString='(pointIsNear([(1, 0, 0),], 0.1, inputs))', FieldType='POINT', InsideOut=0)
         extractSelection1 = ExtractSelection(registrationName='ExtractSelection1', Input=reader)
-        # help(SaveData)    
-        # help(QuerySelect)
-        # SaveData(f'{params.data_dir}/dis_to_time_compression_mudline.csv', proxy=extractSelection1, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'STRAIN', 'STRESS', 'Time'])
         plotSelectionOverTime1 = PlotSelectionOverTime(Input=reader, Selection=sel1)
-        SaveData(f'{params.data_dir}/dis_to_time_compression_mudline.csv', proxy=plotSelectionOverTime1, RowDataArrays=['N', 'Time', 'avg(DISPLACEMENT (0))', 'avg(DISPLACEMENT (1))', 'avg(DISPLACEMENT (2))', 'avg(DISPLACEMENT (Magnitude))', 'avg(GLOBAL_ID)', 'avg(STRAIN (0))', 'avg(STRAIN (1))', 'avg(STRAIN (2))', 'avg(STRAIN (3))', 'avg(STRAIN (4))', 'avg(STRAIN (5))', 'avg(STRAIN (6))', 'avg(STRAIN (7))', 'avg(STRAIN (8))', 'avg(STRAIN (Magnitude))', 'avg(STRESS (0))', 'avg(STRESS (1))', 'avg(STRESS (2))', 'avg(STRESS (3))', 'avg(STRESS (4))', 'avg(STRESS (5))', 'avg(STRESS (6))', 'avg(STRESS (7))', 'avg(STRESS (8))', 'avg(STRESS (Magnitude))', 'avg(X)', 'avg(Y)', 'avg(Z)', 'avg(vtkOriginalPointIds)',],
-    FieldAssociation='Row Data',
-    AddTimeStep=1,
-    AddTime=1)
+        SaveData(f'{params.data_dir}/dis_to_time_compression_mudline_1.0.csv', proxy=plotSelectionOverTime1, RowDataArrays=['N', 'Time', 'avg(DISPLACEMENT (0))', 'avg(DISPLACEMENT (1))', 'avg(DISPLACEMENT (2))', 'avg(DISPLACEMENT (Magnitude))', 'avg(GLOBAL_ID)', 'avg(STRAIN (0))', 'avg(STRAIN (1))', 'avg(STRAIN (2))', 'avg(STRAIN (3))', 'avg(STRAIN (4))', 'avg(STRAIN (5))', 'avg(STRAIN (6))', 'avg(STRAIN (7))', 'avg(STRAIN (8))', 'avg(STRAIN (Magnitude))', 'avg(STRESS (0))', 'avg(STRESS (1))', 'avg(STRESS (2))', 'avg(STRESS (3))', 'avg(STRESS (4))', 'avg(STRESS (5))', 'avg(STRESS (6))', 'avg(STRESS (7))', 'avg(STRESS (8))', 'avg(STRESS (Magnitude))', 'avg(X)', 'avg(Y)', 'avg(Z)', 'avg(vtkOriginalPointIds)',],
+        FieldAssociation='Row Data',
+        AddTimeStep=1,
+        AddTime=1)
+        sel2 = QuerySelect(QueryString='(pointIsNear([(1.1, 0, 0),], 0.1, inputs))', FieldType='POINT', InsideOut=0)
+        extractSelection2 = ExtractSelection(registrationName='ExtractSelection2', Input=reader)
+        plotSelectionOverTime2 = PlotSelectionOverTime(Input=reader, Selection=sel2)
+        SaveData(f'{params.data_dir}/dis_to_time_compression_mudline_1.1.csv', proxy=plotSelectionOverTime2, RowDataArrays=['N', 'Time', 'avg(DISPLACEMENT (0))', 'avg(DISPLACEMENT (1))', 'avg(DISPLACEMENT (2))', 'avg(DISPLACEMENT (Magnitude))', 'avg(GLOBAL_ID)', 'avg(STRAIN (0))', 'avg(STRAIN (1))', 'avg(STRAIN (2))', 'avg(STRAIN (3))', 'avg(STRAIN (4))', 'avg(STRAIN (5))', 'avg(STRAIN (6))', 'avg(STRAIN (7))', 'avg(STRAIN (8))', 'avg(STRAIN (Magnitude))', 'avg(STRESS (0))', 'avg(STRESS (1))', 'avg(STRESS (2))', 'avg(STRESS (3))', 'avg(STRESS (4))', 'avg(STRESS (5))', 'avg(STRESS (6))', 'avg(STRESS (7))', 'avg(STRESS (8))', 'avg(STRESS (Magnitude))', 'avg(X)', 'avg(Y)', 'avg(Z)', 'avg(vtkOriginalPointIds)',],
+        FieldAssociation='Row Data',
+        AddTimeStep=1,
+        AddTime=1)
+        sel3 = QuerySelect(QueryString='(pointIsNear([(1.2, 0, 0),], 0.1, inputs))', FieldType='POINT', InsideOut=0)
+        extractSelection2 = ExtractSelection(registrationName='ExtractSelection2', Input=reader)
+        plotSelectionOverTime2 = PlotSelectionOverTime(Input=reader, Selection=sel2)
+        SaveData(f'{params.data_dir}/dis_to_time_compression_mudline_1.2.csv', proxy=plotSelectionOverTime2, RowDataArrays=['N', 'Time', 'avg(DISPLACEMENT (0))', 'avg(DISPLACEMENT (1))', 'avg(DISPLACEMENT (2))', 'avg(DISPLACEMENT (Magnitude))', 'avg(GLOBAL_ID)', 'avg(STRAIN (0))', 'avg(STRAIN (1))', 'avg(STRAIN (2))', 'avg(STRAIN (3))', 'avg(STRAIN (4))', 'avg(STRAIN (5))', 'avg(STRAIN (6))', 'avg(STRAIN (7))', 'avg(STRAIN (8))', 'avg(STRAIN (Magnitude))', 'avg(STRESS (0))', 'avg(STRESS (1))', 'avg(STRESS (2))', 'avg(STRESS (3))', 'avg(STRESS (4))', 'avg(STRESS (5))', 'avg(STRESS (6))', 'avg(STRESS (7))', 'avg(STRESS (8))', 'avg(STRESS (Magnitude))', 'avg(X)', 'avg(Y)', 'avg(Z)', 'avg(vtkOriginalPointIds)',],
+        FieldAssociation='Row Data',
+        AddTimeStep=1,
+        AddTime=1)
+        
 
     
 @ut.track_time("EXTRACTING DATA FROM .vtk")
 def to_depth(params):
-    vtk_files = subprocess.run(f"ls -c1 {params.data_dir}/*.vtk", shell=True, text=True, capture_output=True)
+    vtk_files = subprocess.run(f"ls -c1 {params.data_dir}/*.vtk  | sort -Vr", shell=True, text=True, capture_output=True)
     if vtk_files.returncode == 0:
         files = [vtk_files.stdout.splitlines()[0]]
         reader = LegacyVTKReader(registrationName="final", FileNames=files)
@@ -61,6 +72,12 @@ def to_depth(params):
         plotOverLine3.Point1 = [1.1, 0.0, 0.0]
         plotOverLine3.Point2 = [1.1, 0.0, -40.0]
         SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.1.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        
+        #data over on the compression
+        plotOverLine3 = PlotOverLine(registrationName='PlotOverLine12', Input=reader)
+        plotOverLine3.Point1 = [1.2, 0.0, 0.0]
+        plotOverLine3.Point2 = [1.2, 0.0, -40.0]
+        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.2.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
         
         
         #data over on the tension

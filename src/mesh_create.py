@@ -616,17 +616,31 @@ def export_to_vtk(params):
         if not vtk_files_list:
             print("No .vtk files found.")
             return
-        
         # Step 3: Move each `.vtk` file to `params.data_dir`
         for vtk_file in vtk_files_list:
             try:
                 shutil.move(vtk_file, os.path.join(params.data_dir, vtk_file))
                 print(f"Moved {vtk_file} to {params.data_dir}")
             except Exception as e:
-                print(f"Failed to move {vtk_file}: {e}")
+                raise RuntimeError(f"Failed to move {vtk_file}: {e}")
     else:
-        print("Failed to list .vtk files.")
-        print(vtk_files.stderr)
+        raise RuntimeError(f"Failed to list .vtk files: {vtk_files.stderr}")
+    h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
+    if h5m_files.returncode == 0:
+        h5m_files_list = h5m_files.stdout.splitlines()
+        if not h5m_files_list:
+            raise RuntimeError("No .vtk files found.")
+            return
+        # Step 3: Move each `.vtk` file to `params.data_dir`
+        for h5m_file in h5m_files_list:
+            try:
+                os.remove(h5m_file)
+                print(f"Deleted {h5m_file}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to delete {h5m_file}: {e}")
+    else:
+        raise RuntimeError(f"Failed to list .h5m files: {h5m_files.stderr}")
+    h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
 
     # Run mbconvert with the last file
     # subprocess.run(f"mbconvert {last_file} {params.vtk_filepath}", shell=True, text=True)
