@@ -39,9 +39,9 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     """
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
-    gmsh.option.setNumber("Geometry.OCCBooleanPreserveNumbering", 1)
+    # gmsh.option.setNumber("Geometry.OCCBooleanPreserveNumbering", 1)
     # gmsh.option.setNumber("Mesh.Algorithm", 11)
-    gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
+    # gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
     # gmsh.option.setNumber('Mesh.RecombineAll', 1)
     # gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 1)
 
@@ -110,25 +110,10 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     if len(pile_vols) != 1:
         raise ValueError(f"Pile not created correctly : {len(pile_vols)}")
     
+    # test =gmsh.model.occ.healShapes()
+    # print(test)
     gmsh.model.occ.removeAllDuplicates()
-    gmsh.model.occ.synchronize()
     
-    # for soil_box in cut_soil_boxes:
-    #     bounding_box = gmsh.model.getBoundingBox(3, soil_box)
-    #     print(bounding_box)
-    #     NN = 10
-    #     for c in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 1):
-    #         gmsh.model.mesh.setTransfiniteCurve(c[1], NN)
-    
-    print(cut_soil_boxes)
-    print(pile_vols)
-    
-    tests = gmsh.model.getEntitiesInBoundingBox(-200, -200, -200, 400, 400, 400, 3)
-    print(tests)
-    # for v in tests:
-    #     gmsh.model.mesh.setTransfiniteVolume(v[1])
-
-    # sys.exit()
     soil_surface_tags = cm.SurfaceTags()
     for soil_box in cut_soil_boxes:
         surface_data = get_surface_extremes(soil_box)
@@ -316,11 +301,11 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
 
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.max_x_surfaces, name="FIX_ALL",
+        dim=2, tags=geo.soil_surfaces.min_x_surfaces, name="FIX_ALL",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # LEFT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.min_x_surfaces, name="FIX_X_0",
+        dim=2, tags=geo.soil_surfaces.max_x_surfaces, name="FIX_X_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition()
     ))  # RIGHT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
@@ -384,7 +369,7 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         # print(tests)
         # for v in tests:
         #     gmsh.model.mesh.setTransfiniteVolume(v[1])
-        gmsh.model.mesh.generate(3)
+        # gmsh.model.mesh.generate(3)
         
         
         gmsh.write(params.med_filepath.as_posix())
@@ -577,7 +562,27 @@ def mofem_compute(params):
     mfront_arguments_str = ' '.join(mfront_arguments)
 
 
-    command = (
+    # command = (
+    #     f"export OMPI_MCA_btl_vader_single_copy_mechanism=none && "
+    #     f"nice -n 10 mpirun --oversubscribe --allow-run-as-root "
+    #     f"-np {params.nproc} {params.um_view}/tutorials/adv-1/contact_3d "
+    #     f"-file_name {params.part_file} "
+    #     f"-sdf_file {params.sdf_file} "
+    #     f"-order {params.order} "
+    #     f"-contact_order 0 "
+    #     f"-sigma_order 0 " #play around this in the future?
+    #     f"-ts_dt {params.time_step} "
+    #     f"-ts_max_time {params.final_time} "
+    #     f"{mfront_arguments_str} "
+    #     f"-mi_save_volume 1 "
+    #     f"-mi_save_gauss 0 "
+    #     f"2>&1 | tee {params.log_file}"
+    # )
+
+    # result = subprocess.run(command, shell=True, text=True)
+    
+    command = [
+        "bash", "-c",
         f"export OMPI_MCA_btl_vader_single_copy_mechanism=none && "
         f"nice -n 10 mpirun --oversubscribe --allow-run-as-root "
         f"-np {params.nproc} {params.um_view}/tutorials/adv-1/contact_3d "
@@ -585,16 +590,36 @@ def mofem_compute(params):
         f"-sdf_file {params.sdf_file} "
         f"-order {params.order} "
         f"-contact_order 0 "
-        f"-sigma_order 0 " #play around this in the future?
+        f"-sigma_order 0 "  # play around with this in the future?
         f"-ts_dt {params.time_step} "
         f"-ts_max_time {params.final_time} "
         f"{mfront_arguments_str} "
         f"-mi_save_volume 1 "
-        f"-mi_save_gauss 0 "
-        f"2>&1 | tee {params.log_file}"
-    )
+        f"-mi_save_gauss 0"
+    ]
 
-    result = subprocess.run(command, shell=True, text=True)
+    # Open the log file
+    with open(params.log_file, 'w') as log_file:
+        # Start the subprocess
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, universal_newlines=True)
+
+        # Read the output line by line
+        for line in process.stdout:
+            print(line, end='')          # Print to console
+            log_file.write(line)         # Write to log file
+            log_file.flush()             # Ensure data is written to the file
+            if "Mfront integration failed" in line:
+                print("Error detected: Mfront integration failed")
+                process.kill()           # Terminate the subprocess
+                sys.exit(1)              # Exit the script with an error code
+
+        # Wait for the process to finish
+        process.wait()
+
+    # Check the return code
+    if process.returncode != 0:
+        print(f"Process exited with return code {process.returncode}")
+        # sys.exit(process.returncode)     # Exit with the subprocess's return code
 
 @ut.track_time("CONVERTING FROM .htm TO .vtk")
 def export_to_vtk(params):

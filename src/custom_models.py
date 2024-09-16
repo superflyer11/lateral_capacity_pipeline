@@ -116,8 +116,38 @@ class ElasticProperties(MaterialProperty):
         return self.poisson_ratio
     
 
-class DruckerPragerProperties(MaterialProperty): #elastic properties should suffice for druckerpragercap for now, but not sure
-    pass
+class DruckerPragerProperties(MaterialProperty):
+    youngs_modulus: float
+    poisson_ratio: float
+    d: float
+    beta: float
+    pa: float
+    pb: float
+    
+    @property
+    def mi_param_0(self) -> float:
+        return self.youngs_modulus
+
+    @property
+    def mi_param_1(self) -> float:
+        return self.poisson_ratio
+    
+    @property
+    def mi_param_2(self) -> float:
+        return self.d
+
+    @property
+    def mi_param_3(self) -> float:
+        return self.beta
+    
+    @property
+    def mi_param_4(self) -> float:
+        return self.pa
+
+    @property
+    def mi_param_5(self) -> float:
+        return self.pb
+    
 
 class IsotropicLinearHardeningPlasticityProperties(MaterialProperty):
     youngs_modulus: float
@@ -142,24 +172,12 @@ class IsotropicLinearHardeningPlasticityProperties(MaterialProperty):
         return self.YieldStress
 
 class CamClayProperties(MaterialProperty):
-    hvorslev_shape_alpha: float = 0
-    hvorslev_shape_n: float = 0
-    hvorslev_plastic_potential_beta: float = 0
-    hvorslev_plastic_potential_m: float = 0
-    G_0: float = 0
-    a: float = 0
-    b: float = 0
-    RG_min: float = 0
-    X: float = 0.548 
-    Y: float = 0.698
-    Z: float = 0.100
-    nu: float = 0.3
-    M: float = 1.2
-    la: float = 7.7*(10**(-2))
-    ka: float = 6.6*(10**(-3))
-    v0: float = 1.7857
-    pc0: float = 200*(10**3)
-    pamb: float = 0.0
+    nu: float = 0.3 #PoissonRatio
+    M: float = 1.2 #CriticalStateLineSlope
+    la: float = 7.7e-2 #ViringConsolidationLineSlope
+    ka: float = 6.6e-3 #SwellingLineSlope    
+    v0: float = 1.7857 #InitialVolumeRatio
+    pc0: float = 400 #CharacteristicPreconsolidationPressure
     
     @property
     def mi_param_0(self) -> float: return self.nu
