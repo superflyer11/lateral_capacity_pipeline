@@ -18,7 +18,7 @@ import utils as ut
 
 
 @ut.track_time("DRAWING MESH")
-def draw_mesh(params) -> cm.GeometryTagManager:
+def draw_mesh(params) -> cm.TestTagManager:
     """
     Draws the mesh using Gmsh based on the provided parameters.
 
@@ -30,104 +30,23 @@ def draw_mesh(params) -> cm.GeometryTagManager:
     """
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
-    # gmsh.option.setNumber("Geometry.OCCBooleanPreserveNumbering", 1)
-    # gmsh.option.setNumber("Mesh.Algorithm", 11)
-    # gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
-    # gmsh.option.setNumber('Mesh.RecombineAll', 1)
-    # gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 1)
-
 
     gmsh.model.add(f"{params.mesh_name}")
 
-    soil_layer_tags = []
-    # Add boxes for the layers
-    for layer in params.box_manager.layers:
-        new_tag = params.box_manager.add_layer(layer)
-        soil_layer_tags.append(new_tag)
-       
-    interface_tag, outer_cylinder_tag, inner_cylinder_tag = params.pile_manager.addPile()
+    test_volume = gmsh.model.occ.addBox(-10, -10, 0, 20, 20, 20)
 
-    # Cut the soil blocks with the pile
-    cut_soil_tags, _ = gmsh.model.occ.cut(
-        [[3, tag] for tag in soil_layer_tags],
-        [[3, interface_tag]],
-        -1,
-        removeObject=True,
-        removeTool=False,
-    )
-    cut_soil_boxes = [tag for _, tag in cut_soil_tags]
-
-    symmetry_cutter_tag = gmsh.model.occ.addBox(params.box_manager.min_x-200, 0, params.box_manager.min_z-200, params.box_manager.max_x+400, params.box_manager.max_y+400, params.box_manager.max_z+400)
-
-    interface_tags, _ = gmsh.model.occ.cut(
-        [[3, interface_tag]],
-        [[3, outer_cylinder_tag]],
-        -1,
-        removeObject=True,
-        removeTool=False,
-    )
-    interface_vols = [tag for dim, tag in interface_tags]
+    test_surface_tags = cm.SurfaceTags()
+    test_surface_data = get_surface_extremes(test_volume)
+    test_surface_tags = update_surface_tags(test_surface_tags, test_surface_data)
     
-    interface_tags, _ = gmsh.model.occ.cut(
-        [[3, tag] for tag in interface_vols],
-        [[3, symmetry_cutter_tag]],
-        -1,
-        removeObject=True,
-        removeTool=False,
+    test_tag_manager = cm.TestTagManager(
+        test_volume=[test_volume],
+        test_surfaces=test_surface_tags,
     )
     
-    interface_vols = [tag for dim, tag in interface_tags]
-        
-    # Cut the outer cylinder with the inner cylinder to form the pile
-    cut_pile_tags, _ = gmsh.model.occ.cut(
-        [[3, outer_cylinder_tag]],
-        [[3, inner_cylinder_tag]],
-        -1,
-        removeObject=True,
-        removeTool=True,
-    )
-    pile_vols = [tag for dim, tag in cut_pile_tags]
-
-    # Cut the pile in half with the symmetry cutter plane
-    cut_pile_tags, _ = gmsh.model.occ.cut(
-        [[3, tag] for tag in pile_vols],
-        [[3, symmetry_cutter_tag]],
-        -1,
-        removeObject=True,
-        removeTool=True,
-    )
-    pile_vols = [tag for dim, tag in cut_pile_tags]
-    if len(pile_vols) != 1:
-        raise ValueError(f"Pile not created correctly : {len(pile_vols)}")
-    
-    # test =gmsh.model.occ.healShapes()
-    # print(test)
-    gmsh.model.occ.removeAllDuplicates()
-    
-    soil_surface_tags = cm.SurfaceTags()
-    for soil_box in cut_soil_boxes:
-        surface_data = get_surface_extremes(soil_box)
-        soil_surface_tags = update_surface_tags(soil_surface_tags, surface_data)
-
-    pile_surface_tags = cm.SurfaceTags()
-    pile_surface_data = get_surface_extremes(pile_vols[0])
-    pile_surface_tags = update_surface_tags(pile_surface_tags, pile_surface_data)
-    
-    interface_surface_tags = cm.SurfaceTags()
-    interface_surface_data = get_surface_extremes(interface_vols[0])
-    interface_surface_tags = update_surface_tags(interface_surface_tags, interface_surface_data)
-    
-    geometry_tag_manager = cm.GeometryTagManager(
-        soil_volumes=cut_soil_boxes,
-        pile_volumes=pile_vols,
-        interface_volumes = interface_vols,
-        soil_surfaces=soil_surface_tags,
-        pile_surfaces=pile_surface_tags,
-        interface_surfaces=interface_surface_tags,
-    )
     gmsh.model.occ.synchronize()
     
-    return geometry_tag_manager
+    return test_tag_manager
 
 
 
@@ -202,134 +121,49 @@ def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTag
         
     return global_tags
 
-#this is not used
-def get_edge_extremes(volume: int) -> cm.SurfaceTags:
-    curveLoopTags, curveTags = gmsh.model.occ.getCurveLoops(volume)
-    curveTags = list(curveTags[0])
-    
-    extremes = cm.CurveTags()
-
-    # Define a small tolerance for floating-point comparison
-    tolerance = 1e-5
-    
-    for curve in curveTags:
-        x, y, z = gmsh.model.occ.getCenterOfMass(1, curve)
-        
-        # Update min_x
-        if x < extremes.min_x - tolerance:
-            extremes.min_x = x
-            extremes.min_x_curves = [curve]  # Reset the list
-        elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
-            extremes.min_x_curves.append(curve)  # Append to the list
-
-        # Update max_x
-        if x > extremes.max_x + tolerance:
-            extremes.max_x = x
-            extremes.max_x_curves = [curve]  # Reset the list
-        elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
-            extremes.max_x_curves.append(curve)  # Append to the list
-
-        # Update min_y
-        if y < extremes.min_y - tolerance:
-            extremes.min_y = y
-            extremes.min_y_curves = [curve]  # Reset the list
-        elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
-            extremes.min_y_curves.append(curve)  # Append to the list
-
-        # Update max_y
-        if y > extremes.max_y + tolerance:
-            extremes.max_y = y
-            extremes.max_y_curves = [curve]  # Reset the list
-        elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
-            extremes.max_y_curves.append(curve)  # Append to the list
-
-        # Update min_z
-        if z < extremes.min_z - tolerance:
-            extremes.min_z = z
-            extremes.min_z_curves = [curve]  # Reset the list
-        elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
-            extremes.min_z_curves.append(curve)  # Append to the list
-
-        # Update max_z
-        if z > extremes.max_z + tolerance:
-            extremes.max_z = z
-            extremes.max_z_curves = [curve]  # Reset the list
-        elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
-            extremes.max_z_curves.append(curve)  # Append to the list
-
-    return extremes
-
 
 @ut.track_time("ADDING PHYSICAL GROUPS TO MESH")
-def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalGroup]:
-    """
-    Adds physical groups to the mesh and generates the mesh using Gmsh.
-    
-    Args:
-        params: Parameters including file paths and mode.
-        geo (cm.GeometryTagManager): GeometryTagManager containing tags for different volumes and surfaces.
-        
-    Returns:
-        List[cm.PhysicalGroup]: List of physical groups added to the mesh.
-    """
+def add_physical_groups(params, geo: cm.TestTagManager) -> List[cm.PhysicalGroup]:
     physical_groups = []
     
-    for i in range(len(geo.soil_volumes)):
-        physical_groups.append(cm.PhysicalGroup(
-            dim=3, tags=[geo.soil_volumes[i]], name=f"SOIL_LAYER_{i}",
-            preferred_model = params.box_manager.layers[i].preferred_model,
-            group_type=cm.PhysicalGroupType.MATERIAL, props=params.box_manager.layers[i].props,
-        ))
     physical_groups.append(cm.PhysicalGroup(
-        dim=3, tags=geo.pile_volumes, name="CYLINDER",
-            preferred_model = params.pile_manager.preferred_model,
-        group_type=cm.PhysicalGroupType.MATERIAL, props=params.pile_manager.props,
+        dim=3, tags=geo.test_volume, name="VOLUME",
+            preferred_model = params.tester.preferred_model,
+        group_type=cm.PhysicalGroupType.MATERIAL, props=params.tester.props,
     ))
-    physical_groups.append(cm.PhysicalGroup(
-        dim=3, tags=geo.interface_volumes, name="INTERFACE",
-            preferred_model = params.interface_manager.preferred_model,
-        group_type=cm.PhysicalGroupType.MATERIAL, props=params.interface_manager.props,
-    ))
-
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.min_x_surfaces, name="FIX_ALL",
+        dim=2, tags=geo.test_surfaces.min_z_surfaces, name="FIX_ALL",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
-    ))  # LEFT FACE OF SOIL
+    )) 
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.max_x_surfaces, name="FIX_X_0",
+        dim=2, tags=[*geo.test_surfaces.max_x_surfaces, *geo.test_surfaces.min_x_surfaces], name="FIX_X_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
-    ))  # RIGHT FACE OF SOIL
+    ))  
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.soil_surfaces.min_z_surfaces, name="FIX_Z_0",
+        dim=2, tags=[*geo.test_surfaces.max_y_surfaces, *geo.test_surfaces.min_y_surfaces], name="FIX_Y_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
-    ))  # BOTTOM FACE OF SOIL
-    physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=[*geo.soil_surfaces.min_y_surfaces, *geo.soil_surfaces.max_y_surfaces, 
-                     *geo.pile_surfaces.max_y_surfaces, *geo.interface_surfaces.max_y_surfaces,
-                     ], name="FIX_Y_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
-    ))  # BACK AND FRONT FACE OF SOIL
+    ))  
     
     if getattr(params, 'prescribed_force', None):
         physical_groups.append(cm.PhysicalGroup(
-            dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FORCE",
+            dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FORCE",
             group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_force,
         ))  # TOP FACE OF PILE
     elif getattr(params, 'prescribed_disp', None):
         if getattr(params.prescribed_disp, 'disp_ux', None):
             physical_groups.append(cm.PhysicalGroup(
-                dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FIX_X_1",
+                dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FIX_X_1",
                 group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_disp,
             ))  # TOP FACE OF PILE
         elif getattr(params.prescribed_disp, 'disp_uy', None):
             physical_groups.append(cm.PhysicalGroup(
-                dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FIX_Y_1",
+                dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FIX_Y_1",
                 group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_disp,
             ))  # TOP FACE OF PILE
         elif getattr(params.prescribed_disp, 'disp_uz', None):
             physical_groups.append(cm.PhysicalGroup(
-                dim=2, tags=geo.pile_surfaces.max_z_surfaces, name="FIX_Z_1",
+                dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FIX_Z_1",
                 group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_disp,
             ))  # TOP FACE OF PILE
         
@@ -343,9 +177,8 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
             name=group.name,
         ))
     
-        
-    gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.min_x, params.box_manager.min_y, params.box_manager.min_z, params.box_manager.max_x, params.box_manager.max_y, params.box_manager.max_z), params.box_manager.far_field_size)
-    gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
+    # gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.min_x, params.box_manager.min_y, params.box_manager.min_z, params.box_manager.max_x, params.box_manager.max_y, params.box_manager.max_z), params.box_manager.far_field_size)
+    # gmsh.model.mesh.setSize(gmsh.model.getEntitiesInBoundingBox(params.box_manager.near_field_min_x, params.box_manager.near_field_min_y, params.box_manager.near_field_min_z, params.box_manager.near_field_max_x, params.box_manager.near_field_max_y, params.box_manager.near_field_max_z), params.box_manager.near_field_size)
     # Setting Gmsh options and generating mesh
     try:
         gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
@@ -353,28 +186,6 @@ def add_physical_groups(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalG
         # gmsh.option.setNumber("Mesh.SaveAll", 1)
 
         gmsh.model.mesh.generate(3)
-        # gmsh.model.mesh.recombine()
-        # # ======================== ======================== ========================
-        # for soil_box in geo.soil_volumes:
-        #     bounding_box = gmsh.model.getBoundingBox(3, soil_box)
-        #     print(bounding_box)
-        #     NN = 10
-        #     for c in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 1):
-        #         gmsh.model.mesh.setTransfiniteCurve(c[1], NN)
-        #     for s in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 2):
-        #         gmsh.model.mesh.setTransfiniteSurface(s[1])
-        #         gmsh.model.mesh.setRecombine(2, s[1])
-        #         # gmsh.model.mesh.setSmoothing(s[0], s[1], 100)
-        #         # gmsh.model.mesh.setTransfiniteVolume(cut_soil_boxes[i-1])
-        # # gmsh.model.occ.synchronize()
-        # # ======================== ======================== ========================
-        # tests = gmsh.model.getEntitiesInBoundingBox(-200, -200, -200, 400, 400, 400, 3)
-        # print(tests)
-        # for v in tests:
-        #     gmsh.model.mesh.setTransfiniteVolume(v[1])
-        # gmsh.model.mesh.generate(3)
-        
-        
         gmsh.write(params.med_filepath.as_posix())
     except Exception as e:
         print(f"An error occurred during mesh generation: {e}")

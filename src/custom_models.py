@@ -7,6 +7,15 @@ from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny
 import gmsh
 from enum import Enum
 
+# one giant glob of parameters
+class AttrDict(dict):
+    def __getattr__(self, attr):
+        if attr in self:
+            return self[attr]
+        raise AttributeError(f"'AttrDict' object has no attribute '{attr}'")
+    def __setattr__(self, key, value):
+        self[key] = value
+
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
     max_x_surfaces: list = []
@@ -44,6 +53,13 @@ class GeometryTagManager(BaseModel):
     pile_surfaces: SurfaceTags
     interface_surfaces: SurfaceTags
 
+class TestTagManager(BaseModel):
+    test_volume: list
+    test_surfaces: SurfaceTags
+    
+class TestTagManager2D(BaseModel):
+    test_surface: list
+    test_curves: CurveTags
 
 class BoundaryCondition(BaseModel): pass
     # model_config = ConfigDict(extra='allow')
@@ -57,15 +73,16 @@ class NodeBoundaryCondition(BoundaryCondition):
     disp_flag3: float = 0
 
 class EdgeBoundaryCondition(BoundaryCondition):
-    disp_ux: float = 0
-    disp_uy: float = 0
-    disp_uz: float = 0
+    disp_ux: float | None = None
+    disp_uy: float | None = None
+    disp_uz: float | None = None
+    
 
 class SurfaceBoundaryCondition(BoundaryCondition):
-    disp_ux: float = 0
-    disp_uy: float = 0
-    disp_uz: float = 0
-
+    disp_ux: float | None = None
+    disp_uy: float | None = None
+    disp_uz: float | None = None
+    
 class ForceBoundaryCondition(BoundaryCondition):
     fx: int = 0
     fy: int = 0
@@ -243,6 +260,11 @@ add=BLOCKSET
 name={self.name}
 """
         return block
+    
+class TestAttr(BaseModel):
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
+
 class InterfaceManager(BaseModel):
     preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
     props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
@@ -334,7 +356,7 @@ class PileManager(BaseModel):
         use_enum_values = True  # <--
     
     def addPile(self):
-        interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+(self.R-self.r), angle= 2*math.pi)
+        interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+0.01, angle= 2*math.pi)
         outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
         return [interface_tag, outer_tag, inner_tag]
