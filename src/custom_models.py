@@ -52,6 +52,21 @@ class GeometryTagManager(BaseModel):
     soil_surfaces: SurfaceTags
     pile_surfaces: SurfaceTags
     interface_surfaces: SurfaceTags
+    FIX_ALL: list | None = None
+    FIX_Y_0: list | None = None
+    FIX_X_0: list | None = None
+    FIX_Z_0: list | None = None
+    FIX_X_1: list | None = None
+    
+    
+class ManualGeometryTagManager(BaseModel):
+    soil_volumes: list 
+    pile_volumes: list 
+    FIX_ALL: list
+    FIX_Y_0: list
+    FIX_X_0: list
+    FIX_Z_0: list
+    FIX_X_1: list
 
 class TestTagManager(BaseModel):
     test_volume: list
@@ -348,6 +363,7 @@ class PileManager(BaseModel):
     dz: float 
     R: float
     r: float
+    interface: bool
     preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
     props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
     # linear_elastic_properties: LinearElasticProperties
@@ -356,10 +372,15 @@ class PileManager(BaseModel):
         use_enum_values = True  # <--
     
     def addPile(self):
-        interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+0.01, angle= 2*math.pi)
+        if self.interface:
+            interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+0.01, angle= 2*math.pi)
         outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
         inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
-        return [interface_tag, outer_tag, inner_tag]
+        if self.interface:
+            return [interface_tag, outer_tag, inner_tag]
+        else:
+            return [outer_tag, inner_tag]
+            
     
     # def create_CFGBLOCK(self) -> MFRONT_CONFIG_BLOCK:
     #     block = MFRONT_CONFIG_BLOCK(

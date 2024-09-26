@@ -1,8 +1,8 @@
 import os
 import sys
 import subprocess
+# import custom_models as cm
 from paraview.simple import *
-
 import utils as ut
 
 class AttrDict(dict):
@@ -65,32 +65,31 @@ def to_depth(params):
         plotOverLine2 = PlotOverLine(registrationName='PlotOverLine2', Input=reader)
         plotOverLine2.Point1 = [1.0, 0.0, 0.0]
         plotOverLine2.Point2 = [1.0, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.csv', proxy=plotOverLine2, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.csv', proxy=plotOverLine2, PointDataArrays=['DISPLACEMENT',  'PARALLEL_PARTITION', 'STRAIN', 'STRESS', ])
 
         #data over on the compression
         plotOverLine3 = PlotOverLine(registrationName='PlotOverLine3', Input=reader)
         plotOverLine3.Point1 = [1.1, 0.0, 0.0]
         plotOverLine3.Point2 = [1.1, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.1.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.1.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT',  'PARALLEL_PARTITION', 'STRAIN', 'STRESS', ])
         
         #data over on the compression
         plotOverLine3 = PlotOverLine(registrationName='PlotOverLine12', Input=reader)
         plotOverLine3.Point1 = [1.2, 0.0, 0.0]
         plotOverLine3.Point2 = [1.2, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.2.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        SaveData(f'{params.data_dir}/dis_to_depth_compression_x_1.2.csv', proxy=plotOverLine3, PointDataArrays=['DISPLACEMENT',  'PARALLEL_PARTITION', 'STRAIN', 'STRESS', ])
         
         
         #data over on the tension
         plotOverLine4 = PlotOverLine(registrationName='plotOverLine4', Input=reader)
         plotOverLine4.Point1 = [-1.0, 0.0, 0.0]
         plotOverLine4.Point2 = [-1.0, 0.0, -40.0]
-        SaveData(f'{params.data_dir}/dis_to_depth_tension_x_-1.csv', proxy=plotOverLine4, PointDataArrays=['DISPLACEMENT', 'GLOBAL_ID', 'NB_IN_THE_LOOP', 'PARALLEL_PARTITION', 'STRAIN', 'STRESS', 'arc_length'])
+        SaveData(f'{params.data_dir}/dis_to_depth_tension_x_-1.csv', proxy=plotOverLine4, PointDataArrays=['DISPLACEMENT',  'PARALLEL_PARTITION', 'STRAIN', 'STRESS', ])
         
 
 params = AttrDict()
-params.vtk_filepath = sys.argv[1] 
-params.data_dir = sys.argv[2] 
-if len(sys.argv) > 1:
+params.data_dir = sys.argv[1] 
+if len(sys.argv) >= 1:
     to_time(params)
     to_depth(params)
 
