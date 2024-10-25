@@ -227,7 +227,7 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
     try:
         with open(params.read_med_initial_log_file, 'w') as log_file:
             subprocess.run(
-                ["read_med", "-med_file", params.med_filepath.as_posix()],
+                ["/mofem_install/jupyter/thomas/um_view/bin/read_med", "-med_file", params.med_filepath.as_posix()],
                 stdout=log_file,
                 stderr=log_file,
                 check=True
@@ -290,7 +290,7 @@ def inject_configs(params):
     """
     try:
         subprocess.run(
-            ["read_med", 
+            ["/mofem_install/jupyter/thomas/um_view/bin/read_med", 
              "-med_file", f"{params.med_filepath}", 
              "-output_file", f"{params.h5m_filepath}", 
              "-meshsets_config", f"{params.config_file}", #remember it is meshsets not meshnets
@@ -409,7 +409,7 @@ def export_to_vtk(params):
     # Step 1: List all `out_*h5m` files and convert them to `.vtk` using `convert.py`
     out_to_vtk = subprocess.run("ls -c1 out_*h5m", shell=True, text=True, capture_output=True)
     if out_to_vtk.returncode == 0:
-        convert_result = subprocess.run("convert.py -np 4 out_*h5m final.vtk", shell=True, text=True, capture_output=True)
+        convert_result = subprocess.run("/mofem_install/jupyter/thomas/um_view/bin/convert.py -np 4 out_*h5m final.vtk", shell=True, text=True, capture_output=True)
         if convert_result.returncode == 0:
             print("Conversion to VTK successful.")
         else:

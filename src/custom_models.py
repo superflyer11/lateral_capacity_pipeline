@@ -107,7 +107,7 @@ class ForceBoundaryCondition(BoundaryCondition):
 class PropertyTypeEnum(str, Enum):
     elastic = "LinearElasticity" #good performance
     saint_venant_kirchhoff = "SaintVenantKirchhoff" #slow
-    isotropic_hardening = "IsotropicLinearHardeningPlasticity" #not yet tested
+    von_mises = "VMSimo" #not yet tested
     drucker_prager = "DruckerPragerCap" # 'DruckerPragerCap' looks more adv but fails mfront integration
     cam_clay = "ModCamClay_semiExpl" # none of them is working so far
 
@@ -181,7 +181,7 @@ class DruckerPragerProperties(MaterialProperty):
         return self.pb
     
 
-class IsotropicLinearHardeningPlasticityProperties(MaterialProperty):
+class VonMisesProperties(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
     HardeningSlope: float
