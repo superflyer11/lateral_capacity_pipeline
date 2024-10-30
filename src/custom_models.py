@@ -3,7 +3,7 @@ from enum import Enum
 # from enum import IntEnum, StrEnum
 from typing import Any, Dict, List, Union, Optional
 from typing_extensions import Self
-from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny
+from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny, root_validator
 import gmsh
 from enum import Enum
 
@@ -44,6 +44,15 @@ class CurveTags(BaseModel):
     min_z: float = float('inf')
     max_z: float = float('-inf')
 
+class NodeTags2D(BaseModel):
+    min_x_min_y_node: int = None
+    min_x_max_y_node: int = None
+    max_x_min_y_node: int = None
+    max_x_max_y_node: int = None
+    min_x: float = float('inf')
+    max_x: float = float('-inf')
+    min_y: float = float('inf')
+    max_y: float = float('-inf')
 
 class GeometryTagManager(BaseModel):
     soil_volumes: list 
@@ -75,24 +84,57 @@ class TestTagManager(BaseModel):
 class TestTagManager2D(BaseModel):
     test_surface: list
     test_curves: CurveTags
+    test_nodes: NodeTags2D
 
-class BoundaryCondition(BaseModel): pass
+class TimeHistory(BaseModel):
+    history: dict[float, float] | None = None
+
+    def write(self, filepath):
+        attrs = ''
+        print(self.history)
+        for step, value in self.history.items():
+            attrs += f"{step} {value}\n"
+
+        with open(filepath, "w") as f:
+            f.writelines(attrs)
+
+class BoundaryCondition(BaseModel):
+    @model_validator(mode="after")
+    def check_single_dict_field(self):
+        
+        # Count the fields that are dictionaries
+        dict_fields = [field for field in self.model_fields if isinstance(getattr(self, field), dict)]
+        if len(dict_fields) > 1:
+            raise ValueError("Only one of disp_ux, disp_uy, or disp_uz can be a dictionary.")
+        return self
+    
+    def replace_dict_with_value(self, value: float = 1.0) -> TimeHistory:
+        for field_name in self.model_fields:
+            field_value = getattr(self, field_name)
+            if isinstance(field_value, dict):
+                print("extracted the value")  # Print message
+                extracted_dict = field_value  # Store the dict in the result
+                setattr(self, field_name, value)  # Replace the field with 1.0
+                return TimeHistory(history=extracted_dict)
+        return None
     # model_config = ConfigDict(extra='allow')
 
     # def model_dump(self):
     #     return self.dict()
 
+
+            
+
 class NodeBoundaryCondition(BoundaryCondition):
-    disp_ux: float = 0
-    disp_uy: float = 0
-    disp_flag3: float = 0
+    disp_ux: float | dict[float, float] | None = None
+    disp_uy: float | dict[float, float] | None = None
+    disp_uz: float | dict[float, float] | None = None
 
 class EdgeBoundaryCondition(BoundaryCondition):
-    disp_ux: float | None = None
-    disp_uy: float | None = None
-    disp_uz: float | None = None
+    disp_ux: float | dict[float, float] | None = None
+    disp_uy: float | dict[float, float] | None = None
+    disp_uz: float | dict[float, float] | None = None
     
-
 class SurfaceBoundaryCondition(BoundaryCondition):
     disp_ux: float | None = None
     disp_uy: float | None = None
@@ -106,9 +148,9 @@ class ForceBoundaryCondition(BoundaryCondition):
 # value should be the behvaiour name in mfront
 class PropertyTypeEnum(str, Enum):
     elastic = "LinearElasticity" #good performance
-    saint_venant_kirchhoff = "SaintVenantKirchhoff" #slow
+    saint_venant_kirchhoff = "SaintVenantKirchhoff" #not using this
     von_mises = "VMSimo" #not yet tested
-    drucker_prager = "DruckerPragerCap" # 'DruckerPragerCap' looks more adv but fails mfront integration
+    drucker_prager = "DruckerPragerSimple" # 'DruckerPragerCap' looks more adv but fails mfront integration
     cam_clay = "ModCamClay_semiExpl" # none of them is working so far
 
 class MaterialProperty(BaseModel):
@@ -146,7 +188,30 @@ class ElasticProperties(MaterialProperty):
     @property
     def mi_param_1(self) -> float:
         return self.poisson_ratio
+
+class VonMisesProperties(MaterialProperty):
+    youngs_modulus: float
+    poisson_ratio: float
+    HardeningSlope: float
+    YieldStress: float
     
+    @property
+    def mi_param_0(self) -> float:
+        return self.YieldStress
+
+    @property
+    def mi_param_1(self) -> float:
+        return self.HardeningSlope
+    
+    
+    @property
+    def mi_param_2(self) -> float:
+        return self.youngs_modulus
+
+    @property
+    def mi_param_3(self) -> float:
+        return self.poisson_ratio
+
 
 class DruckerPragerProperties(MaterialProperty):
     youngs_modulus: float
@@ -179,29 +244,6 @@ class DruckerPragerProperties(MaterialProperty):
     @property
     def mi_param_5(self) -> float:
         return self.pb
-    
-
-class VonMisesProperties(MaterialProperty):
-    youngs_modulus: float
-    poisson_ratio: float
-    HardeningSlope: float
-    YieldStress: float
-    
-    @property
-    def mi_param_0(self) -> float:
-        return self.youngs_modulus
-
-    @property
-    def mi_param_1(self) -> float:
-        return self.poisson_ratio
-    
-    @property
-    def mi_param_2(self) -> float:
-        return self.HardeningSlope
-
-    @property
-    def mi_param_3(self) -> float:
-        return self.YieldStress
 
 class CamClayProperties(MaterialProperty):
     nu: float = 0.3 #PoissonRatio
