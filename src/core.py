@@ -2,7 +2,7 @@ import subprocess
 import re
 import shutil
 import os
-
+import sys
 import utils as ut
 
 
@@ -23,22 +23,22 @@ def replace_template_sdf(params):
 # if to decouple need to persist physical_groups (which is a list of pydantic objects), not difficult to do but have to think of if you are sure that it conforms to the mesh
 def generate_mesh(params):
     import mesh_create_common as mshcrte_common
-    if params.use_case == "test_2D":
+    if params.case_name == "test_2D":
         import mesh_create_test_2D as mshcrte
-    elif params.use_case == "test_3D":
+    elif params.case_name == "test_3D":
         import mesh_create_test_3D as mshcrte
-    elif params.use_case == "pile_problem":
-        import mesh_create as mshcrte
+    elif params.case_name == "pile":
+        import mesh_create_pile as mshcrte
     else:
         raise NotImplementedError("2024-10-30: no mesh for this use case yet! (Or use case not defined yet)")    
-    if params.use_case in ["test_2D", "test_3D"]:
+    if params.case_name in ["test_2D", "test_3D"]:
         geo = mshcrte.draw_mesh(params)
         params.physical_groups = mshcrte.add_physical_groups(params, geo)
-    elif params.use_case == "pile_problem":
+    elif params.case_name == "pile_problem":
         if params.mode == "auto":
             # Thomas Lai 2024, not confirmed the mesh converges yet
-            geo = mshcrte.draw_mesh(params)
-            params.physical_groups = mshcrte.generate_physical_groups(params, geo)
+            geo = mshcrte.draw_mesh_auto(params)
+            params.physical_groups = mshcrte.generate_physical_groups_auto(params, geo)
             mshcrte.add_physical_groups(params.physical_groups)
             mshcrte.finalize_mesh(params)
         elif params.mode == "manual":
@@ -90,7 +90,7 @@ def mofem_compute(params):
         "bash", "-c",
         f"export OMPI_MCA_btl_vader_single_copy_mechanism=none && "
         f"nice -n 10 mpirun --oversubscribe --allow-run-as-root "
-        f"-np {params.nproc} {params.um_view}/{params.exe} "
+        f"-np {params.nproc} {params.exe} "
         f"-file_name {params.part_file} "
         f"-sdf_file {params.sdf_file} "
         f"-order {params.order} "
@@ -100,17 +100,22 @@ def mofem_compute(params):
         f"-ts_max_time {params.final_time} "
         f"{mfront_arguments_str} "
         f"-mi_save_volume 1 "
-        f"-mi_save_gauss 0"
+        f"-mi_save_gauss 0 "
+        f"{'-time_scalar_file ' + str(params.time_history_file) if getattr(params, 'time_history', False) else ''}"
     ]
 
-    if params.time_history:
-        command.append(f"-time_scalar_file {params.time_history_file}")
-
+    # if params.time_history:
+    #     print('appended time scalar file')
+    #     command.append(f"-time_scalar_file {params.time_history_file}")
     # Open the log file
     with open(params.log_file, 'w') as log_file:
         # Start the subprocess
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, universal_newlines=True)
-
+        print("Command:", end='\n')
+        log_file.write("Command:\n")         # Write to log file
+        print(str(command), end='\n')
+        log_file.write(f"{command}\n")         # Write to log file
+        
         # Read the output line by line
         for line in process.stdout:
             print(line, end='')          # Print to console
@@ -135,7 +140,7 @@ def export_to_vtk(params):
     # Step 1: List all `out_*h5m` files and convert them to `.vtk` using `convert.py`
     out_to_vtk = subprocess.run("ls -c1 out_*h5m", shell=True, text=True, capture_output=True)
     if out_to_vtk.returncode == 0:
-        convert_result = subprocess.run("/mofem_install/jupyter/thomas/um_view/bin/convert.py -np 4 out_*h5m final.vtk", shell=True, text=True, capture_output=True)
+        convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 out_*h5m final.vtk", shell=True, text=True, capture_output=True)
         if convert_result.returncode == 0:
             print("Conversion to VTK successful.")
         else:
@@ -153,8 +158,8 @@ def export_to_vtk(params):
         # Step 3: Move each `.vtk` file to `params.data_dir`
         for vtk_file in vtk_files_list:
             try:
-                shutil.move(vtk_file, os.path.join(params.data_dir, vtk_file))
-                print(f"Moved {vtk_file} to {params.data_dir}")
+                shutil.move(vtk_file, os.path.join(params.vtk_dir, vtk_file))
+                print(f"Moved {vtk_file} to {params.vtk_dir}")
             except Exception as e:
                 raise RuntimeError(f"Failed to move {vtk_file}: {e}")
     else:
@@ -175,8 +180,5 @@ def export_to_vtk(params):
     else:
         raise RuntimeError(f"Failed to list .h5m files: {h5m_files.stderr}")
     h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
-
-    # Run mbconvert with the last file
-    # subprocess.run(f"mbconvert {last_file} {params.vtk_filepath}", shell=True, text=True)
 
 

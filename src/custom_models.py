@@ -149,8 +149,10 @@ class ForceBoundaryCondition(BoundaryCondition):
 class PropertyTypeEnum(str, Enum):
     elastic = "LinearElasticity" #good performance
     saint_venant_kirchhoff = "SaintVenantKirchhoff" #not using this
-    von_mises = "VMSimo" #not yet tested
-    drucker_prager = "DruckerPragerSimple" # 'DruckerPragerCap' looks more adv but fails mfront integration
+    von_mises = "VMSimo" #tested to be have the same results as mfront gallery implementation
+    drucker_prager = "DruckerPragerSimple" 
+    dp_hyperbolic = "DruckerPragerHyperboloidal"
+    # drucker_prager = "DruckerPragerParaboloidal" # fails mfront integration
     cam_clay = "ModCamClay_semiExpl" # none of them is working so far
 
 class MaterialProperty(BaseModel):
@@ -216,34 +218,62 @@ class VonMisesProperties(MaterialProperty):
 class DruckerPragerProperties(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
-    d: float
-    beta: float
-    pa: float
-    pb: float
+    phi: float
+    c: float
+    v: float
     
     @property
     def mi_param_0(self) -> float:
-        return self.youngs_modulus
+        return self.phi
 
     @property
     def mi_param_1(self) -> float:
-        return self.poisson_ratio
+        return self.c
     
     @property
     def mi_param_2(self) -> float:
-        return self.d
+        return self.youngs_modulus
 
     @property
     def mi_param_3(self) -> float:
-        return self.beta
+        return self.poisson_ratio
+    
+    # @property
+    # def mi_param_4(self) -> float:
+    #     return self.v
+
+class DruckerPragerHyperbolicProperties(MaterialProperty):
+    youngs_modulus: float
+    poisson_ratio: float
+    phi: float
+    c: float
+    v: float
+    proximity: float
     
     @property
-    def mi_param_4(self) -> float:
-        return self.pa
+    def mi_param_0(self) -> float:
+        return self.phi
 
     @property
-    def mi_param_5(self) -> float:
-        return self.pb
+    def mi_param_1(self) -> float:
+        return self.c
+    
+    @property
+    def mi_param_2(self) -> float:
+        return self.proximity
+    
+    @property
+    def mi_param_3(self) -> float:
+        return self.youngs_modulus
+
+    @property
+    def mi_param_4(self) -> float:
+        return self.poisson_ratio
+    
+    # @property
+    # def mi_param_4(self) -> float:
+    #     return self.v
+
 
 class CamClayProperties(MaterialProperty):
     nu: float = 0.3 #PoissonRatio

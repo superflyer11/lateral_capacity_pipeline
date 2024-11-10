@@ -23,7 +23,7 @@ def draw_mesh_manual(params) -> cm.GeometryTagManager:
 
     # Initialize gmsh
     gmsh.initialize()
-    gmsh.model.add(f"{params.mesh_name}")
+    gmsh.model.add(f"{params.case_name}")
     gmsh.option.setNumber("General.Verbosity", 3)
     
     # Translation of .geo file 
@@ -280,7 +280,7 @@ def draw_mesh_auto(params) -> cm.GeometryTagManager:
     # gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 1)
 
 
-    gmsh.model.add(f"{params.mesh_name}")
+    gmsh.model.add(f"{params.case_name}")
 
     soil_layer_tags = []
     # Add boxes for the layers

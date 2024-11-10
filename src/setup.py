@@ -24,13 +24,13 @@ def log_sim_entry(params):
         logs = {}
 
     # Create the params dictionary for the log entry
-    if params.use_case in ["test_2D", "test_3D"]:
+    if params.case_name in ["test_2D", "test_3D"]:
         params_dict = {
             "test_volume": params.tester.model_dump(serialize_as_any=True),
             "prescribed_force": params.prescribed_force.model_dump() if getattr(params, 'prescribed_force', None) else None,
             "prescribed_disp": params.prescribed_disp.model_dump() if getattr(params, 'prescribed_disp', None) else None,
         }
-    elif params.use_case == "pile_problem":
+    elif params.case_name == "pile":
         params_dict = {
             "mesh": params.mode,
             "pile_manager": params.pile_manager.model_dump(serialize_as_any=True),
@@ -71,39 +71,47 @@ def log_sim_entry(params):
     return params
 
 def initialize_paths(params):
-
-    params.simulation_name = f"test_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}_{params.time_of_sim}"
-    params.mesh_name = f"test_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}"
-
-    # Continue with the rest of the simulation setup
-    params.data_dir = Path(f"/mofem_install/jupyter/thomas/mfront_example_test/simulations/{params.simulation_name}")
-    params.data_dir.mkdir(parents=True, exist_ok=True)
-
     params.template_sdf_file = params.wk_dir / f"src/template_sdf.py"
     params.sdf_file = params.wk_dir / f"src/sdf.py"
 
+    params.data_dir = Path(f"/mofem_install/jupyter/thomas/mfront_example_test/simulations/{params.simulation_name}")
+    params.data_dir.mkdir(parents=True, exist_ok=True)
 
-    params.med_filepath = params.data_dir / f"{params.mesh_name}.med"
-    params.h5m_filepath = params.data_dir / f"{params.mesh_name}.h5m"
-    params.vtk_filepath = params.data_dir / f"{params.mesh_name}.vtk"
-    params.csv_filepath = params.data_dir / f"{params.mesh_name}.csv"
-    params.part_file = os.path.splitext(params.h5m_filepath)[0] + "_" + str(params.nproc) + "p.h5m"
-    params.time_history_file = params.data_dir / f"disp_history.txt"
+    params.vtk_dir = params.data_dir / f"vtks"
+    params.vtk_dir.mkdir(parents=True, exist_ok=True)
+    params.graph_dir = params.data_dir / f"graphs"
+    params.graph_dir.mkdir(parents=True, exist_ok=True)
+    
+    
+    params.med_filepath = params.data_dir / f"{params.mesh_name_appended}.med"
+    params.h5m_filepath = params.data_dir / f"{params.mesh_name_appended}.h5m"
 
-    params.read_med_initial_log_file = params.data_dir / f"{params.mesh_name}_read_med.log"
+    params.read_med_initial_log_file = params.data_dir / f"{params.mesh_name_appended}_read_med.log"
     params.config_file = params.data_dir / "bc.cfg"
-    params.log_file = params.data_dir /  f"result_{params.mesh_name}.log"
+    params.log_file = params.data_dir /  f"result_{params.mesh_name_appended}.log"
     if not os.path.exists(params.log_file):
         with open(params.log_file, 'w'): pass
+
+    params.part_file = os.path.splitext(params.h5m_filepath)[0] + "_" + str(params.nproc) + "p.h5m"
+    params.time_history_file = params.data_dir / f"body_force_hist.txt"
+    
+    params.strain_animation_temp_dir = Path( params.data_dir / "strain_animation_pngs")
+    params.strain_animation_temp_dir.mkdir(parents=True, exist_ok=True)
+    params.strain_animation_filepath_png =  params.strain_animation_temp_dir / f"{params.mesh_name_appended}.png"
+    params.strain_animation_filepath_png_ffmpeg_regex =  params.strain_animation_temp_dir / f"{params.mesh_name_appended}.%04d.png"
+    params.strain_animation_filepath_mp4 = params.data_dir /  f"{params.mesh_name_appended}.mp4"
+    
+    params.point_to_time_filepath = params.data_dir / f"{params.mesh_name_appended}_to_time.csv"
 
     return params
 
 def setup(params):
-    params.time_history = False # always set as False initilaly, checked at the stage of writing the config files
     params.days_since_epoch = days_since_epoch()
-    params.time_of_sim = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
-    params.date_of_sim = time.strftime("%Y_%m_%d", time.localtime())
+    params.time_of_sim = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+    params.date_of_sim = time.strftime("%Y%m%d", time.localtime())
     params = log_sim_entry(params)
+    params.simulation_name = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}_{params.time_of_sim}_{params.global_default_model.name}"
+    params.mesh_name_appended = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}_{params.global_default_model.name}"
     params = initialize_paths(params)
     return params
 

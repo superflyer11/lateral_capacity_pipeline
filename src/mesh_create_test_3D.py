@@ -32,9 +32,9 @@ def draw_mesh(params) -> cm.TestTagManager:
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
 
-    gmsh.model.add(f"{params.mesh_name}")
+    gmsh.model.add(f"{params.case_name}")
 
-    test_volume = gmsh.model.occ.addBox(-10, -10, 0, 20, 20, 20)
+    test_volume = gmsh.model.occ.addBox(-params.mesh_size/2,-params.mesh_size/2,0,params.mesh_size,params.mesh_size,params.mesh_size)
 
     test_surface_tags = cm.SurfaceTags()
     test_surface_data = mshcrte_common.get_surface_extremes(test_volume)
@@ -55,21 +55,27 @@ def add_physical_groups(params, geo: cm.TestTagManager) -> List[cm.PhysicalGroup
     physical_groups = []
     
     physical_groups.append(cm.PhysicalGroup(
-        dim=3, tags=geo.test_volume, name="VOLUME",
+        dim=3, tags=geo.test_volume, name=params.mesh_name_appended,
             preferred_model = params.tester.preferred_model,
         group_type=cm.PhysicalGroupType.MATERIAL, props=params.tester.props,
     ))
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.test_surfaces.min_z_surfaces, name="FIX_ALL",
+        dim=2, tags=geo.test_surfaces.min_z_surfaces, name="FIX_Z",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     )) 
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=[*geo.test_surfaces.max_x_surfaces, *geo.test_surfaces.min_x_surfaces], name="FIX_X_0",
+        dim=2, tags=[
+            *geo.test_surfaces.max_x_surfaces, 
+            *geo.test_surfaces.min_x_surfaces
+            ], name="FIX_X_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     ))  
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=[*geo.test_surfaces.max_y_surfaces, *geo.test_surfaces.min_y_surfaces], name="FIX_Y_0",
+        dim=2, tags=[
+            *geo.test_surfaces.max_y_surfaces, 
+            *geo.test_surfaces.min_y_surfaces
+            ], name="FIX_Y_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     ))  
     

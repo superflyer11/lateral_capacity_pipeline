@@ -1,9 +1,14 @@
+import os
 from pydantic import BaseModel, FilePath
 from typing import Dict
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import utils as ut
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
+
+plt.rcParams['animation.ffmpeg_path'] ='/mofem_install/jupyter/thomas/ffmpeg-7.0.2-amd64-static/ffmpeg'
 
 class PlotConfig(BaseModel):
     csv_files: Dict[str, FilePath]  # Dictionary of labels and valid file paths
@@ -186,3 +191,145 @@ class DepthPlotter(BasePlotter):
             self.plot_against_depth(E2, depth, label)
             self.plot_against_depth(E3, depth, label)
         return self.save_plot(save_as)
+
+
+# def plot_2d_with_quiver(x, y, xlabel, ylabel, title, color='b', scale=1, linestyle='-', label=None, plastic_cutoff=None, save_as: str = None):
+#     plt.figure()
+#     tolerance = 1e-6
+#     gradient_tolerance = 0.01
+#     gradients = np.gradient(y)
+
+#     start_idx = 0
+#     for i in range(len(y)-1):
+#         if not np.isclose(gradients[i], gradients[i + 1], atol=gradient_tolerance):
+#             dx = (x[i] - x[start_idx]) * 0.33
+#             dy = (y[i] - y[start_idx]) * 0.33
+#             current_color = 'orange' if (plastic_cutoff is not None and np.isclose(y[start_idx], plastic_cutoff[start_idx], atol=tolerance)) else 'b'
+#             if i - start_idx > 1:
+#                 plt.quiver(x[start_idx], y[start_idx], dx, dy, color=current_color, scale=scale, angles='xy', scale_units='xy', headwidth=5, headlength=4.5,zorder=10)
+#             start_idx = i
+
+#     dx = (x[-1] - x[start_idx]) * 0.33
+#     dy = (y[-1] - y[start_idx]) * 0.33
+#     current_color = 'orange' if (plastic_cutoff is not None and np.isclose(y[start_idx], plastic_cutoff[start_idx], atol=tolerance)) else 'b'
+#     if i - start_idx > 1:
+#         plt.quiver(x[start_idx], y[start_idx], dx, dy, color=current_color, scale=scale, angles='xy', scale_units='xy', headwidth=5, headlength=4.5,zorder=10)
+
+#     plot_color = []
+#     start_idx = 0
+#     for i in range(len(y)-1):
+#         current_color = 'orange' if (plastic_cutoff is not None and np.isclose(plastic_cutoff[i], y[i], atol=tolerance)) else color
+#         if i == 0 or plot_color[-1] != current_color:
+#             if i > 0:
+#                 plt.scatter(x[start_idx:i], y[start_idx:i], color=plot_color[-1], s=0.5)
+#             start_idx = i
+#             plot_color.append(current_color)
+
+#     plt.scatter(x[start_idx:], y[start_idx:], color=current_color, s=0.5)
+#     plt.xlabel(xlabel)
+#     plt.ylabel(ylabel)
+#     plt.title(title)
+#     plt.grid(True,zorder=0)
+    
+#     if save_as:
+#         plt.savefig(save_as)
+#         return save_as
+#     plt.show()
+
+
+def plot_2d_with_quiver(x, y, xlabel, ylabel, title, color='b', scale=1, linestyle='-', label=None, plastic_cutoff=None, save_as: str = None):
+    plt.figure()
+    tolerance = 1e-6
+    
+    gradient_tolerance = 0.01
+    gradients = np.gradient(y)
+
+    start_idx = 0
+    for i in range(len(y)-1):
+        dx = x[i + 1] - x[i]
+        dy = y[i + 1] - y[i]
+        
+        plt.quiver(x[i], y[i], dx, dy, color=color, angles='xy', scale_units='xy', scale=1, zorder=10)
+
+    plt.scatter(x, y, color=color, s=0.5)
+    
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.grid(True,zorder=0)
+    
+    if save_as:
+        filepath = os.path.join(PLOT_DIR, save_as)
+        plt.savefig(f"{filepath}.png")
+        return save_as
+    plt.show()
+
+def plot_2d_with_animation(x, y, xlabel, ylabel, title, color='b', scale=1, linestyle='-', label=None, plastic_cutoff=None, save_as: str = None):
+    fig, ax = plt.subplots()
+    tolerance = 1e-6
+
+    ax.scatter(x, y, color=color, s=0.5)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, zorder=0)
+
+    quiver_segments = []
+
+    def init():
+        return quiver_segments
+
+    def update(frame):
+        # Plot one quiver at a time to animate
+        i = frame
+        dx = x[i + 1] - x[i]
+        dy = y[i + 1] - y[i]
+        
+        # Add a new quiver to the plot
+        quiver = ax.quiver(x[i], y[i], dx, dy, color=color, angles='xy', scale_units='xy', scale=1, zorder=10)
+        quiver_segments.append(quiver)
+
+        return quiver_segments
+
+    ani = FuncAnimation(fig, update, frames=len(x) - 1, init_func=init, blit=False, repeat=False, interval=100)
+
+    # Optional: Save the animation as MP4
+    if save_as:
+        FFwriter = animation.FFMpegWriter(fps=30)
+        ani.save(f'{save_as}.mp4', writer = FFwriter)
+        # ani.save(f"{filepath}.mp4", writer='ffmpeg', fps=30)  # Save as MP4 using FFmpeg
+
+    plt.show()
+
+def create_plot(data, x_label, y_label, title, save_as):
+    linestyle = "-"
+    fig, ax = plt.subplots()
+    max_x, max_y = float('-inf'), float('-inf')
+    for x, y, label, color, cutoff in data:
+        if x is not None and y is not None:
+            if cutoff:
+                mask_elastic = abs(y) < abs(cutoff)
+                mask_plastic = abs(y) >= abs(cutoff)
+                plt.plot(x[mask_elastic], y[mask_elastic], linestyle=linestyle, color='b', label=f"label")
+                plt.plot(x[mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
+            else:
+                plt.plot(x, y, linestyle=linestyle, color=color, label=label)
+            max_x = max(max_x, max(x))
+            max_y = max(max_y, max(y))
+    
+    # Add axis labels and title
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.legend()
+
+    ax.grid(True)
+    if save_as:
+        plt.savefig(save_as)
+        return save_as
+
+def plot_sig_eq_vs_e_zz(sig_eq, e_zz, save_as: str =None):
+    return plot_2d_with_quiver(e_zz, sig_eq, 'Axial Strain $\epsilon_{zz}$', 'Equivalent Stress $\sigma_{eq}$', '$\sigma_{eq}$ - Axial Strain',save_as=save_as)
+
+
+

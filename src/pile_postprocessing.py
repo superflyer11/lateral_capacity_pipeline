@@ -13,7 +13,7 @@ class AttrDict(dict):
     def __setattr__(self, key, value):
         self[key] = value
 
-@ut.track_time("EXTRACTING GROUP DATA FROM .vtk")
+@ut.track_time("EXTRACTING DATA OVER ALL TIMESTEPS AT CERTAIN POINTS FROM .vtk")
 def to_time(params):    
     paraview.simple._DisableFirstRenderCameraReset()
     renderView1 = GetActiveViewOrCreate('RenderView') #idk where to put this
@@ -51,7 +51,7 @@ def to_time(params):
         
 
     
-@ut.track_time("EXTRACTING DATA FROM .vtk")
+@ut.track_time("EXTRACTING DATA AT FINAL TIMESTEP (OR AVG OVER TIMESTEP) FROM .vtk")
 def to_depth(params):
     vtk_files = subprocess.run(f"ls -c1 {params.data_dir}/*.vtk  | sort -Vr", shell=True, text=True, capture_output=True)
     if vtk_files.returncode == 0:

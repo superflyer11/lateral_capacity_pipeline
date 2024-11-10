@@ -21,9 +21,9 @@ def draw_mesh(params) -> cm.TestTagManager:
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
 
-    gmsh.model.add(f"{params.mesh_name}")
+    gmsh.model.add(f"{params.mesh_name_appended}")
 
-    test_surface = gmsh.model.occ.addRectangle(-10, -10, 0, 20, 20)
+    test_surface = gmsh.model.occ.addRectangle(-params.mesh_size/2,-params.mesh_size/2,0,params.mesh_size,params.mesh_size)
     gmsh.model.occ.synchronize()
     try:
         gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
@@ -52,19 +52,20 @@ def add_physical_groups(params, geo: cm.TestTagManager2D) -> List[cm.PhysicalGro
     physical_groups = []
     
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.test_surface, name=params.mesh_name,
+        dim=2, tags=geo.test_surface, name=params.case_name,
             preferred_model = params.tester.preferred_model,
         group_type=cm.PhysicalGroupType.MATERIAL, props=params.tester.props,
     ))
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
         dim=1, tags=geo.test_curves.min_y_curves, name="FIX_Y_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.EdgeBoundaryCondition(disp_ux=0)
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.EdgeBoundaryCondition()
     )) 
     physical_groups.append(cm.PhysicalGroup(
-        dim=0, tags=[geo.test_nodes.max_x_min_y_node], name="FIX_X_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.EdgeBoundaryCondition(disp_ux=0)
+        dim=0, tags=[*geo.test_curves.min_x_curves,*geo.test_curves.max_x_curves], name="FIX_Y_5",
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.EdgeBoundaryCondition()
     )) 
+
 
     if getattr(params, 'prescribed_force', None):
         raise NotImplementedError('2024-09-18: I did not implement this')

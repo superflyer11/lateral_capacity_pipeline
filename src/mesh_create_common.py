@@ -228,7 +228,7 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
     try:
         with open(params.read_med_initial_log_file, 'w') as log_file:
             subprocess.run(
-                ["/mofem_install/jupyter/thomas/um_view/bin/read_med", "-med_file", params.med_filepath.as_posix()],
+                [params.read_med_exe, "-med_file", params.med_filepath.as_posix()],
                 stdout=log_file,
                 stderr=log_file,
                 check=True
@@ -254,6 +254,8 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
 
 @ut.track_time("GENERATING CONFIG FILES")
 def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
+    if getattr(params, "time_history", False):
+        params.time_history.write(params.time_history_file)
     print(physical_groups)
     blocks: list[cm.BC_CONFIG_BLOCK | cm.MFRONT_CONFIG_BLOCK] = []
     new_physical_groups: List[cm.PhysicalGroup] = []
@@ -261,8 +263,9 @@ def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
         if physical_groups[i].group_type == cm.PhysicalGroupType.BOUNDARY_CONDITION:
             scale = physical_groups[i].bc.replace_dict_with_value() # replace the dict and returns the dict
             if scale:
-                scale.write(params.time_history_file)
-                params.time_history = True
+                raise NotImplementedError("Inputting the scale directly will have issues with positive and negative signs, directly use params.time_history instead")
+                sys.exit()
+                # scale.write(params.time_history_file)
             blocks.append(cm.BC_CONFIG_BLOCK(
                 block_name = f"SET_ATTR_{physical_groups[i].name}",
                 comment = f"Boundary condition for {physical_groups[i].name}",
@@ -297,7 +300,7 @@ def inject_configs(params):
     """
     try:
         subprocess.run(
-            ["/mofem_install/jupyter/thomas/um_view/bin/read_med", 
+            [params.read_med_exe, 
              "-med_file", f"{params.med_filepath}", 
              "-output_file", f"{params.h5m_filepath}", 
              "-meshsets_config", f"{params.config_file}", #remember it is meshsets not meshnets
@@ -312,7 +315,7 @@ def partition_mesh(params):
     try:
         subprocess.run(
                     [
-                f'{params.um_view}/bin/mofem_part', 
+                params.partition_exe, 
                 '-my_file', f'{params.h5m_filepath}',
                 '-my_nparts', f'{params.nproc}',
                 '-output_file', f'{params.part_file}',
