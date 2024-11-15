@@ -357,8 +357,6 @@ def draw_mesh_auto(params) -> cm.GeometryTagManager:
     if len(pile_vols) != 1:
         raise ValueError(f"Pile not created correctly : {len(pile_vols)}")
     
-    # test = gmsh.model.occ.healShapes()
-    
     soil_surface_tags = cm.SurfaceTags()
     for soil_box in cut_soil_boxes:
         surface_data = mshcrte_common.get_surface_extremes(soil_box)
@@ -452,6 +450,167 @@ def generate_physical_groups_auto(params, geo: cm.GeometryTagManager) -> List[cm
     return physical_groups
         
         
+
+        
+        
+@ut.track_time("DRAWING MESH")
+def draw_mesh_cylinder(params) -> cm.GeometryTagManager:
+    gmsh.initialize()
+    gmsh.option.setNumber("General.Verbosity", 3)
+    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 50)
+
+    gmsh.model.add(f"{params.case_name}")
+
+    init_soil_layer_tags = []
+    # Add boxes for the layers
+    for i in range(len(params.cylinder_manager.layers)):
+        new_tags = params.cylinder_manager.add_layer(params.cylinder_manager.layers[i], params.pile_manager.embedded_depth)
+        init_soil_layer_tags.append(new_tags)
+    outer_cylinder_tag, inner_cylinder_tag = params.pile_manager.addPile()
+    
+    # Cut the outer cylinder with the inner cylinder to form the pile
+    pile_tags, _ = gmsh.model.occ.cut(
+        objectDimTags = [[3, outer_cylinder_tag]],
+        toolDimTags = [[3, inner_cylinder_tag]],
+        removeObject=True,
+        removeTool=True,
+    )
+  
+    sliced_soil_tags = []
+    # Cut the soil blocks with the pile
+    for i in range(len(init_soil_layer_tags)):
+        sliced_soil_layer_tags, _ = gmsh.model.occ.cut(
+            objectDimTags = init_soil_layer_tags[i],
+            toolDimTags = pile_tags,
+            removeObject=True,
+            removeTool=False,
+        )
+        sliced_soil_tags.append(sliced_soil_layer_tags)
+        
+    list_of_flat_surface_z = [params.cylinder_manager.z]
+    # Calculate cumulative depths of each layer to determine flat surface z-values
+    cumulative_depth = params.cylinder_manager.z
+    for layer in params.cylinder_manager.layers:
+        cumulative_depth += layer.depth
+        list_of_flat_surface_z.append(cumulative_depth)
+        
+    disp_node = gmsh.model.occ.addPoint(-1,0,10.5)
+    origin_node = gmsh.model.occ.addPoint(0,0,0)
+    bottom_origin_node = gmsh.model.occ.addPoint(0,0,cumulative_depth)
+    centre_line = gmsh.model.occ.addLine(origin_node, bottom_origin_node)
+    
+    gmsh.model.occ.synchronize()
+    soil_vols = []
+    all_vols = []
+    for i in sliced_soil_tags:
+        for j in i:
+            soil_vols.append(j)
+    all_vols = [*soil_vols, *pile_tags]
+    
+    # def get_interior_soil_symmetrical_surfaces():
+    #     #can either query just soil_vols or globally, here choose to check globally because it is easier to implement
+    #     surfaceData = gmsh.model.occ.getEntities(2)
+    #     # Define a small tolerance for floating-point comparison
+    #     tolerance = 1e-5
+    #     query = []
+        
+    #     for surface in surfaceData:
+    #         surface = surface[1]
+    #         x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
+    #         print(f"{x} {y} {z}")
+            
+    #         if math.isclose(x, 0, abs_tol=tolerance) and math.isclose(y, 0, abs_tol=tolerance):
+    #             query.append(surface)
+    #     return query
+    
+    # # for i in pile_tags:
+    #     # all_vols.append(j)
+    # print(get_interior_soil_symmetrical_surfaces())
+    
+    def get_curved_bounding_y(dimTags, params) -> cm.SurfaceTags:
+        # Define a small tolerance for floating-point comparison
+        tolerance = 1e-5
+        
+        # Desired norm (radius) for the side surfaces
+        target_radius = 0.5 * params.cylinder_manager.r
+        curved_side_surfaces = []
+        for dim, surface in dimTags:
+            # Get the center of mass for each surface
+            x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
+            
+            xy_norm = math.sqrt(x**2 + y**2)
+
+            # Only process surfaces with center of mass in the specified z range and y not close to zero
+            if (
+                not any(math.isclose(z, flat_z, abs_tol=tolerance) for flat_z in list_of_flat_surface_z) and 
+                (abs(y) > tolerance) and 
+                (xy_norm > target_radius)
+            ):
+                curved_side_surfaces.append(surface)
+
+        return curved_side_surfaces
+
+    all_curved_side_surfaces = get_curved_bounding_y(gmsh.model.getBoundary(all_vols, combined = True, oriented=False), params)
+    pile_side_surfaces = get_curved_bounding_y(gmsh.model.getBoundary(pile_tags, combined = True, oriented=False), params)
+    
+    soil_curved_side_surfaces = list(set(all_curved_side_surfaces) - set(pile_side_surfaces))
+    
+    global_surface_tags = mshcrte_common.get_global_surface_extremes_2D()
+    
+    geometry_tag_manager = cm.GeometryTagManager(
+        soil_volumes=sliced_soil_tags,
+        pile_volumes=pile_tags,
+        global_surfaces=global_surface_tags,
+        curved_surfaces = soil_curved_side_surfaces,
+        disp_node = disp_node,
+        origin_node = origin_node,
+        # interface_volumes = interface_vols if params.interface else [],
+        # soil_surfaces=soil_surface_tags,
+        # pile_surfaces=pile_surface_tags,
+        # interface_surfaces=interface_surface_tags,
+    )
+    # gmsh.model.occ.synchronize()
+    
+    return geometry_tag_manager
+
+@ut.track_time("CREATING PHYSICAL GROUPS")
+def generate_physical_groups_cylinder(params, geo: cm.GeometryTagManager) -> List[cm.PhysicalGroup]:
+    physical_groups: List[cm.PhysicalGroup] = []
+    
+    for i in range(len(geo.soil_volumes)):
+        physical_groups.append(cm.PhysicalGroup(
+            dim=3, tags=list(k[1] for k in geo.soil_volumes[i]), name=f"SOIL_LAYER_{i}",
+            preferred_model = params.cylinder_manager.layers[i].preferred_model,
+            group_type=cm.PhysicalGroupType.MATERIAL, props=params.cylinder_manager.layers[i].props,
+        ))
+    physical_groups.append(cm.PhysicalGroup(
+        dim=3, tags=list(k[1] for k in geo.pile_volumes), name="CYLINDER",
+            preferred_model = params.pile_manager.preferred_model,
+        group_type=cm.PhysicalGroupType.MATERIAL, props=params.pile_manager.props,
+    ))
+    physical_groups.append(cm.PhysicalGroup(
+        dim=2, tags=geo.global_surfaces.min_z_surfaces, name="FIX_ALL_0",
+            preferred_model = None,
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0),
+    ))
+    physical_groups.append(cm.PhysicalGroup(
+        dim=2, tags=geo.global_surfaces.min_y_surfaces, name="FIX_Y_0",
+            preferred_model = None,
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=0,disp_uz=None),
+    ))
+    physical_groups.append(cm.PhysicalGroup(
+            dim=0, tags=[geo.disp_node], name="FIX_X_1",
+                preferred_model = None,
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=-1,disp_uy=None,disp_uz=None),
+        ))
+    physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=[*geo.curved_surfaces], name="FIX_ALL_1",
+                preferred_model = None,
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=None,disp_uz=None),
+        ))
+    
+    return physical_groups
+
 @ut.track_time("ADDING PHYSICAL GROUPS TO MESH")
 def add_physical_groups(physical_groups: List[cm.PhysicalGroup]) -> None: 
     # Adding physical groups to Gmsh model
@@ -462,38 +621,120 @@ def add_physical_groups(physical_groups: List[cm.PhysicalGroup]) -> None:
             tags=group.tags,
             name=group.name,
         ))
-    
-    
-@ut.track_time("GENERATING MESH")
-def finalize_mesh(params):
-    
-    # Setting Gmsh options and generating mesh
-    try:
-        
-        # gmsh.option.setNumber("Mesh.SaveAll", 1)
+    return physical_group_dimtag
 
+@ut.track_time("GENERATING MESH")
+def finalize_mesh(params, geo, physical_groups, physical_groups_dimTags):
+    # Setting Gmsh options and generating mesh
+    # radial_divisions = 10
+    radial_divisions = params.mesh_radial_divisions
+    try:
+        tolerance = 1e-5
+        list_of_flat_surface_z = [params.cylinder_manager.z]
+        # Calculate cumulative depths of each layer to determine flat surface z-values
+        cumulative_depth = params.cylinder_manager.z
+        for layer in params.cylinder_manager.layers:
+            cumulative_depth += layer.depth
+            list_of_flat_surface_z.append(cumulative_depth)
+            
+        
+        # query = []
+        for _, volTag in gmsh.model.getEntitiesForPhysicalName("CYLINDER"):
+            _, surfaceTags = gmsh.model.occ.getSurfaceLoops(volTag)
+            for surfaceTag in surfaceTags[0]:
+                _, curveTags = gmsh.model.occ.getCurveLoops(surfaceTag)
+                for curveTag in curveTags[0]:
+                    length = gmsh.model.occ.getMass(1, curveTag)
+                    if length < 1:
+                        gmsh.model.mesh.setTransfiniteCurve(curveTag, 1)
+                    else:
+                        # the number of nodes has to be set as the same as the nodes in the soil domain final else 
+                        gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions)
+        # print(4 * params.pile_manager.r/ (3 * math.pi))
+        for i in range(len(geo.soil_volumes)):
+            volTags = gmsh.model.getEntitiesForPhysicalName(f"SOIL_LAYER_{i}")
+            for _, volTag in volTags:
+                _, surfaceTags = gmsh.model.occ.getSurfaceLoops(volTag)
+                for surfaceTag in surfaceTags[0]:
+                    _, curveTags = gmsh.model.occ.getCurveLoops(surfaceTag)
+                    for curveTag in curveTags[0]:
+                        length = gmsh.model.occ.getMass(1, curveTag)
+                        x,y,z = gmsh.model.occ.getCenterOfMass(1, curveTag)
+                        
+                        # for the short/symmetrical edge of the "virtual" pile underneath the pile
+                        if math.isclose(x, params.pile_manager.r + (params.pile_manager.R-params.pile_manager.r)/2, abs_tol=tolerance) and math.isclose(y, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 1)
+                        # for the short edge of the "virtual" pile underneath the pile
+                        elif math.isclose(x, -params.pile_manager.r - (params.pile_manager.R-params.pile_manager.r)/2, abs_tol=tolerance) and math.isclose(y, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 1)
+                        
+                        # this number is controlled by the final else
+                        # for the long/curved edge of the "virtual" pile underneath the pile to be consistent as the one with the pile
+                        elif math.isclose(y, params.pile_manager.r*(2/math.pi), abs_tol=tolerance) and math.isclose(x, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions)
+                        # for the long/curved edge of the "virtual" pile underneath the pile to be consistent as the one with the pile
+                        elif math.isclose(y, params.pile_manager.R*(2/math.pi), abs_tol=tolerance) and math.isclose(x, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions)
+                        
+                        # this number is controlled by the final else
+                        # for symmetrical edge of the the inner soil domain
+                        elif math.isclose(x, -params.pile_manager.r/2, abs_tol=tolerance) and math.isclose(y, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions)
+                        elif math.isclose(x, params.pile_manager.r/2, abs_tol=tolerance) and math.isclose(y, 0, abs_tol=tolerance):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions)    
+                        
+                        
+                        #radial
+                        elif math.isclose(y,0,abs_tol=tolerance) and any(math.isclose(z, flat_z, abs_tol=tolerance) for flat_z in list_of_flat_surface_z):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 15, 'Progression', params.cylinder_manager.radial_progression)
+                        #along the vertical edges
+                        elif length > 10 and not(any(math.isclose(z, flat_z, abs_tol=tolerance) for flat_z in list_of_flat_surface_z)):
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 10, 'Progression', 1.2)
+                        #this has to be set equal to the radial number of nodes, but don't understand why?
+                        #potentially just add more if else cases to fine tune
+                        else:
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, radial_divisions, 'Progression')
+        # sys.exit()
+        
+        surfaces = gmsh.model.getEntities(2)
+        # def get_interior_soil_horizontal_surfaces():
+        #     #can either query just soil_vols or globally, here choose to check globally because it is easier to implement
+        #     surfaceData = gmsh.model.occ.getEntities(2)
+        #     # Define a small tolerance for floating-point comparison
+        #     tolerance = 1e-5
+        #     query = []
+        #     for surface in surfaceData:
+        #         surface = surface[1]
+        #         x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
+        #         if math.isclose(x, 0, abs_tol=tolerance) and math.isclose(y, 4 * params.pile_manager.r/ (3 * math.pi), abs_tol=tolerance):
+        #             query.append(surface)
+        #     return query
+        # interior_soil_horizontal_surfaces = get_interior_soil_horizontal_surfaces()
+        
+        for _, tag in surfaces:
+            # if tag in interior_soil_horizontal_surfaces:
+            #     print(tag)
+            #     # or figure out how to set as radial triangles
+            #     continue
+            gmsh.model.mesh.setTransfiniteSurface(tag)
+            
+        # sys.exit()
+        volumes = gmsh.model.getEntities(3)
+        for _, tag in volumes:
+            _, surfaceTags = gmsh.model.occ.getSurfaceLoops(tag)
+            # if any(surface in surfaceTags[0] for surface in interior_soil_horizontal_surfaces):
+            #     continue
+            gmsh.model.mesh.setTransfiniteVolume(tag)
+        gmsh.option.setNumber('Mesh.SecondOrderIncomplete', 1)
+        gmsh.option.setNumber('Mesh.RecombineAll', 1)
+        gmsh.option.setNumber('Mesh.Recombine3DAll', 1)
+        gmsh.option.setNumber('Mesh.Recombine3DLevel', 1)
+        gmsh.model.mesh.recombine()
+        gmsh.option.setNumber("Mesh.SaveAll", 1)
         gmsh.model.mesh.generate(3)
-        # gmsh.model.mesh.recombine()
-        # # ======================== ======================== ========================
-        # for soil_box in geo.soil_volumes:
-        #     bounding_box = gmsh.model.getBoundingBox(3, soil_box)
-        #     NN = 10
-        #     for c in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 1):
-        #         gmsh.model.mesh.setTransfiniteCurve(c[1], NN)
-        #     for s in gmsh.model.getEntitiesInBoundingBox(*bounding_box, 2):
-        #         gmsh.model.mesh.setTransfiniteSurface(s[1])
-        #         gmsh.model.mesh.setRecombine(2, s[1])
-        #         # gmsh.model.mesh.setSmoothing(s[0], s[1], 100)
-        #         # gmsh.model.mesh.setTransfiniteVolume(cut_soil_boxes[i-1])
-        # # gmsh.model.occ.synchronize()
-        # # ======================== ======================== ========================
-        # tests = gmsh.model.getEntitiesInBoundingBox(-200, -200, -200, 400, 400, 400, 3)
-        # for v in tests:
-        #     gmsh.model.mesh.setTransfiniteVolume(v[1])
-        # gmsh.model.mesh.generate(3)
-        
-        
         gmsh.write(params.med_filepath.as_posix())
+        return physical_groups
+    
     except Exception as e:
         raise RuntimeError(f"An error occurred during mesh generation: {e}")
         gmsh.write(params.med_filepath.as_posix())

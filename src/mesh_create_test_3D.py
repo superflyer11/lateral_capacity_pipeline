@@ -32,7 +32,7 @@ def draw_mesh(params) -> cm.TestTagManager:
     gmsh.initialize()
     gmsh.option.setNumber("General.Verbosity", 3)
 
-    gmsh.model.add(f"{params.case_name}")
+    gmsh.model.add(f"{params.mesh_name_appended}")
 
     test_volume = gmsh.model.occ.addBox(-params.mesh_size/2,-params.mesh_size/2,0,params.mesh_size,params.mesh_size,params.mesh_size)
 
@@ -55,36 +55,58 @@ def add_physical_groups(params, geo: cm.TestTagManager) -> List[cm.PhysicalGroup
     physical_groups = []
     
     physical_groups.append(cm.PhysicalGroup(
-        dim=3, tags=geo.test_volume, name=params.mesh_name_appended,
+        dim=3, tags=geo.test_volume, name=params.case_name,
             preferred_model = params.tester.preferred_model,
         group_type=cm.PhysicalGroupType.MATERIAL, props=params.tester.props,
     ))
     # Adding boundary condition physical groups
     physical_groups.append(cm.PhysicalGroup(
-        dim=2, tags=geo.test_surfaces.min_z_surfaces, name="FIX_Z",
+        dim=2, tags=geo.test_surfaces.min_z_surfaces, name="FIX_Z_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     )) 
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=[
             *geo.test_surfaces.max_x_surfaces, 
-            *geo.test_surfaces.min_x_surfaces
             ], name="FIX_X_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     ))  
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=[
             *geo.test_surfaces.max_y_surfaces, 
-            *geo.test_surfaces.min_y_surfaces
             ], name="FIX_Y_0",
         group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
     ))  
     
     if getattr(params, 'prescribed_force', None):
         physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=[
+                *geo.test_surfaces.min_x_surfaces
+                ], name="FORCE_1",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.ForceBoundaryCondition(f_x=-50, f_y=0, f_z=0)
+        ))  
+        physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=[
+                *geo.test_surfaces.min_y_surfaces
+                ], name="FORCE_2",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.ForceBoundaryCondition(f_x=0, f_y=-50, f_z=0)
+        ))  
+        physical_groups.append(cm.PhysicalGroup(
             dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FORCE",
             group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=params.prescribed_force,
         ))  # TOP FACE OF PILE
     elif getattr(params, 'prescribed_disp', None):
+        physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=[
+                *geo.test_surfaces.min_x_surfaces
+                ], name="FIX_X_1",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0.1,disp_uy=None,disp_uz=None)
+        ))  
+        physical_groups.append(cm.PhysicalGroup(
+            dim=2, tags=[
+                *geo.test_surfaces.min_y_surfaces
+                ], name="FIX_Y_1",
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=0.1,disp_uz=None)
+        ))  
         if getattr(params.prescribed_disp, 'disp_ux', None):
             physical_groups.append(cm.PhysicalGroup(
                 dim=2, tags=geo.test_surfaces.max_z_surfaces, name="FIX_X_1",
@@ -114,13 +136,31 @@ def add_physical_groups(params, geo: cm.TestTagManager) -> List[cm.PhysicalGroup
     try:
         gmsh.option.setNumber("Mesh.MeshSizeMax", 10)
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 36)
+        for volTag in gmsh.model.getEntitiesForPhysicalGroup(3,geo.test_volume[0]):
+            _, surfaceTags = gmsh.model.occ.getSurfaceLoops(volTag)
+            for surfaceTag in surfaceTags[0]:
+                _, curveTags = gmsh.model.occ.getCurveLoops(surfaceTag)
+                for curveTag in curveTags[0]:
+                    length = gmsh.model.occ.getMass(1, curveTag)
+                    if length < 1:
+                        gmsh.model.mesh.setTransfiniteCurve(curveTag, 1)
+                    else:
+                        gmsh.model.mesh.setTransfiniteCurve(curveTag, 10)
+        surfaces = gmsh.model.getEntities(2)
+        for _, tag in surfaces:
+            gmsh.model.mesh.setTransfiniteSurface(tag)
+        volumes = gmsh.model.getEntities(3)
+        for _, tag in volumes:
+            gmsh.model.mesh.setTransfiniteVolume(tag)
+        gmsh.option.setNumber('Mesh.RecombineAll', 1)
+        gmsh.model.mesh.recombine()
         # gmsh.option.setNumber("Mesh.SaveAll", 1)
 
         gmsh.model.mesh.generate(3)
         gmsh.write(params.med_filepath.as_posix())
     except Exception as e:
-        print(f"An error occurred during mesh generation: {e}")
-        gmsh.write(params.med_filepath.as_posix())
+        raise RuntimeError(f"An error occurred during mesh generation: {e}")
+        # gmsh.write(params.med_filepath.as_posix())
         
     finally:
         gmsh.finalize()

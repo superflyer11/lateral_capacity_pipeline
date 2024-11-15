@@ -44,6 +44,23 @@ class CurveTags(BaseModel):
     min_z: float = float('inf')
     max_z: float = float('-inf')
 
+class NodeTags3D(BaseModel):
+    min_x_min_y_min_z_node: int = None
+    min_x_min_y_max_z_node: int = None
+    min_x_max_y_min_z_node: int = None
+    min_x_max_y_max_z_node: int = None
+    max_x_min_y_min_z_node: int = None
+    max_x_min_y_max_z_node: int = None
+    max_x_max_y_min_z_node: int = None
+    max_x_max_y_max_z_node: int = None
+    min_x: float = float('inf')
+    max_x: float = float('-inf')
+    min_y: float = float('inf')
+    max_y: float = float('-inf')
+    min_z: float = float('inf')
+    max_z: float = float('-inf')
+
+
 class NodeTags2D(BaseModel):
     min_x_min_y_node: int = None
     min_x_max_y_node: int = None
@@ -57,15 +74,19 @@ class NodeTags2D(BaseModel):
 class GeometryTagManager(BaseModel):
     soil_volumes: list 
     pile_volumes: list 
-    interface_volumes: list
-    soil_surfaces: SurfaceTags
-    pile_surfaces: SurfaceTags
-    interface_surfaces: SurfaceTags
-    FIX_ALL: list | None = None
-    FIX_Y_0: list | None = None
-    FIX_X_0: list | None = None
-    FIX_Z_0: list | None = None
-    FIX_X_1: list | None = None
+    global_surfaces: SurfaceTags
+    curved_surfaces: list
+    disp_node: int
+    origin_node: int
+    # interface_volumes: list
+    # soil_surfaces: SurfaceTags
+    # pile_surfaces: SurfaceTags
+    # interface_surfaces: SurfaceTags
+    # FIX_ALL: list | None = None
+    # FIX_Y_0: list | None = None
+    # FIX_X_0: list | None = None
+    # FIX_Z_0: list | None = None
+    # FIX_X_1: list | None = None
     
     
 class ManualGeometryTagManager(BaseModel):
@@ -141,19 +162,20 @@ class SurfaceBoundaryCondition(BoundaryCondition):
     disp_uz: float | None = None
     
 class ForceBoundaryCondition(BoundaryCondition):
-    fx: int = 0
-    fy: int = 0
-    fz: int = 0
+    f_x: int | None = None
+    f_y: int | None = None
+    f_z: int | None = None
 
 # value should be the behvaiour name in mfront
 class PropertyTypeEnum(str, Enum):
-    elastic = "LinearElasticity" #good performance
+    le = "LinearElasticity" #good performance
     saint_venant_kirchhoff = "SaintVenantKirchhoff" #not using this
-    von_mises = "VMSimo" #tested to be have the same results as mfront gallery implementation
-    drucker_prager = "DruckerPragerSimple" 
+    vM = "VMSimo" #tested to be have the same results as mfront gallery implementation
+    dp = "DruckerPragerSimple" 
+    dpNA = "DruckerPragerNonAssociated" 
     dp_hyperbolic = "DruckerPragerHyperboloidal"
     # drucker_prager = "DruckerPragerParaboloidal" # fails mfront integration
-    cam_clay = "ModCamClay_semiExpl" # none of them is working so far
+    mcc = "ModCamClay_semiExpl" # none of them is working so far
 
 class MaterialProperty(BaseModel):
     
@@ -241,6 +263,33 @@ class DruckerPragerProperties(MaterialProperty):
     # @property
     # def mi_param_4(self) -> float:
     #     return self.v
+
+class DPNAProps(MaterialProperty):
+    youngs_modulus: float
+    poisson_ratio: float
+    phi: float
+    c: float
+    v: float
+    
+    @property
+    def mi_param_0(self) -> float:
+        return self.phi
+
+    @property
+    def mi_param_1(self) -> float:
+        return self.c
+    
+    @property
+    def mi_param_2(self) -> float:
+        return self.v
+
+    @property
+    def mi_param_3(self) -> float:
+        return self.youngs_modulus
+    
+    @property
+    def mi_param_4(self) -> float:
+        return self.poisson_ratio
 
 class DruckerPragerHyperbolicProperties(MaterialProperty):
     youngs_modulus: float
@@ -349,12 +398,12 @@ name={self.name}
         return block
     
 class TestAttr(BaseModel):
-    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
-    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.le
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.le: None} 
 
 class InterfaceManager(BaseModel):
-    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
-    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.le
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.le: None} 
 
 class BoxManager(BaseModel):
     x: float
@@ -420,10 +469,221 @@ class BoxManager(BaseModel):
     
     def add_layer(self, box: SoilLayer):
         layer_tag = gmsh.model.occ.addBox(self.x, self.y, self.new_layer_z, self.dx, self.dy, box.depth)
-        
-        
         self.new_layer_z += box.depth
         return layer_tag
+
+class CylinderManager(BaseModel):
+    x: float
+    y: float
+    z: float
+    dx: float
+    dy: float
+    r: float = 30
+    pile_R: float
+    pile_r: float
+    new_layer_z: float = 0
+    far_field_size: float = 5
+    near_field_dist: float = 40
+    near_field_size: float = 1
+    radial_progression: float = 1.15
+    layers: list[SoilLayer]
+    
+    
+    @property
+    def min_x(self) -> float:
+        return self.x - self.r
+    
+    @property
+    def min_y(self) -> float:
+        return self.y - self.r
+
+    @property
+    def min_z(self) -> float:
+        total_depth = sum(layer.depth for layer in self.layers)
+        return total_depth + self.max_z
+
+    @property
+    def max_x(self) -> float:
+        return self.x + self.r
+    
+    @property
+    def max_y(self) -> float:
+        return self.y + self.r
+
+    @property
+    def max_z(self) -> float:
+        return self.z 
+    
+    @property
+    def near_field_min_x(self) -> float:
+        return self.x - self.near_field_dist
+    
+    @property
+    def near_field_min_y(self) -> float:
+        return self.y - self.near_field_dist
+
+    @property
+    def near_field_min_z(self) -> float:
+        return self.min_z
+
+    @property
+    def near_field_max_x(self) -> float:
+        return self.x + self.near_field_dist
+    
+    @property
+    def near_field_max_y(self) -> float:
+        return self.y
+
+    @property
+    def near_field_min_z(self) -> float:
+        return self.min_z
+
+    @property
+    def near_field_max_z(self) -> float:
+        return self.z
+    
+    def add_layer(self, box: SoilLayer, pile_embedded_depth: float):
+        if ((self.new_layer_z + box.depth) < pile_embedded_depth and self.new_layer_z > pile_embedded_depth):
+            layer_0_tag_0 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = pile_embedded_depth, 
+                r = self.r,
+                angle = math.pi,
+                )
+            layer_0_tag_1 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = pile_embedded_depth, 
+                r = self.pile_R,
+                angle = math.pi,
+            )
+            layer_0_tag_2 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = pile_embedded_depths, 
+                r = self.pile_r,
+                angle = math.pi,
+            )
+            # Cut the outer cylinder with the inner cylinder to form the pile
+            pile_0_tags, _ = gmsh.model.occ.cut(
+                objectDimTags = [[3, layer_0_tag_1]],
+                toolDimTags = [[3, layer_0_tag_2]],     
+                removeObject=True,
+                removeTool=True,
+            )
+            # Cut the soil layer cylinder with the pile to form the fragments
+            fragmented_soil_layer_0, _ = gmsh.model.occ.fragment(
+                objectDimTags = [[3, layer_0_tag_0]],
+                toolDimTags = pile_0_tags,
+                removeObject=True,
+                removeTool=True,
+            )
+            self.new_layer_z += pile_embedded_depth
+            layer_1_tag_0 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth-pile_embedded_depth, 
+                r = self.r,
+                angle = math.pi,
+                )
+            layer_1_tag_1 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth-pile_embedded_depth, 
+                r = self.pile_R,
+                angle = math.pi,
+            )
+            layer_1_tag_2 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth-pile_embedded_depth, 
+                r = self.pile_r,
+                angle = math.pi,
+            )
+            # Cut the outer cylinder with the inner cylinder to form the pile
+            pile_1_tags, _ = gmsh.model.occ.cut(
+                objectDimTags = [[3, layer_1_tag_1]],
+                toolDimTags = [[3, layer_1_tag_2]],     
+                removeObject=True,
+                removeTool=True,
+            )
+            # Cut the soil layer cylinder with the pile to form the fragments
+            fragmented_soil_layer_1, _ = gmsh.model.occ.fragment(
+                objectDimTags = [[3, layer_1_tag_0]],
+                toolDimTags = pile_1_tags,
+                removeObject=True,
+                removeTool=True,
+            )
+            self.new_layer_z += box.depth - pile_embedded_depth
+            return [*fragmented_soil_layer_0, *fragmented_soil_layer_1]
+        else:
+            layer_tag_0 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth, 
+                r = self.r,
+                angle = math.pi,
+            )
+            layer_tag_1 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth, 
+                r = self.pile_R,
+                angle = math.pi,
+            )
+            layer_tag_2 = gmsh.model.occ.addCylinder(
+                x = self.x, 
+                y = self.y, 
+                z = self.new_layer_z, 
+                dx = self.dx, 
+                dy = self.dy, 
+                dz = box.depth, 
+                r = self.pile_r,
+                angle = math.pi,
+            )
+            # Cut the outer cylinder with the inner cylinder to form the pile
+            pile_tags, _ = gmsh.model.occ.cut(
+                objectDimTags = [[3, layer_tag_1]],
+                toolDimTags = [[3, layer_tag_2]],
+                removeObject=True,
+                removeTool=True,
+            )
+            # Cut the soil layer cylinder with the pile to form the fragments
+            fragmented_soil_layer, _ = gmsh.model.occ.fragment(
+                objectDimTags = [[3, layer_tag_0]],
+                toolDimTags = pile_tags,
+                removeObject=True,
+                removeTool=True,
+            )
+            
+            self.new_layer_z += box.depth
+            return fragmented_soil_layer
+    
 
 
 class PileManager(BaseModel):
@@ -432,12 +692,13 @@ class PileManager(BaseModel):
     z: float
     dx: float 
     dy: float 
-    dz: float 
     R: float
     r: float
+    stickup_height: float
+    embedded_depth: float
     interface: bool
-    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
-    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.elastic: None} 
+    preferred_model: PropertyTypeEnum = PropertyTypeEnum.le
+    props: dict[PropertyTypeEnum, MaterialProperty| None] = {PropertyTypeEnum.le: None} 
     # linear_elastic_properties: LinearElasticProperties
     
     class Config:  
@@ -446,23 +707,13 @@ class PileManager(BaseModel):
     def addPile(self):
         if self.interface:
             interface_tag = gmsh.model.occ.addCylinder(self.x, self.y, 0, self.dx, self.dy, self.dz+self.z, self.R+0.01, angle= 2*math.pi)
-        outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.R, angle= 2*math.pi)
-        inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z, self.dx, self.dy, self.dz, self.r, angle= 2*math.pi)
+        outer_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z + self.stickup_height, self.dx, self.dy, -(self.stickup_height - self.embedded_depth), self.R, angle= math.pi)
+        inner_tag = gmsh.model.occ.addCylinder(self.x, self.y, self.z + self.stickup_height, self.dx, self.dy, -(self.stickup_height - self.embedded_depth), self.r, angle= math.pi)
         if self.interface:
             return [interface_tag, outer_tag, inner_tag]
         else:
             return [outer_tag, inner_tag]
             
-    
-    # def create_CFGBLOCK(self) -> MFRONT_CONFIG_BLOCK:
-    #     block = MFRONT_CONFIG_BLOCK(
-    #         name=f'CYLINDER', 
-    #         number_of_attributes=2, 
-    #         attributes=[
-    #         self.linear_elastic_properties.youngs_modulus,
-    #         self.linear_elastic_properties.poisson_ratio,
-    #     ])
-    #     return block
 
 class MeshsetInfo(BaseModel):
     meshset_id: int
@@ -478,7 +729,7 @@ class PhysicalGroup(BaseModel):
     name: str
     meshnet_id: Optional[int] = None
     group_type: PhysicalGroupType
-    preferred_model: PropertyTypeEnum = PropertyTypeEnum.elastic
+    preferred_model: PropertyTypeEnum | None = PropertyTypeEnum.le
     props: dict[PropertyTypeEnum, MaterialProperty] = {} 
     bc: Optional[BoundaryCondition] = None
     

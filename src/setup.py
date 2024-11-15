@@ -30,7 +30,7 @@ def log_sim_entry(params):
             "prescribed_force": params.prescribed_force.model_dump() if getattr(params, 'prescribed_force', None) else None,
             "prescribed_disp": params.prescribed_disp.model_dump() if getattr(params, 'prescribed_disp', None) else None,
         }
-    elif params.case_name == "pile":
+    elif params.case_name in ["pile", "pile_manual"]:
         params_dict = {
             "mesh": params.mode,
             "pile_manager": params.pile_manager.model_dump(serialize_as_any=True),
@@ -87,6 +87,7 @@ def initialize_paths(params):
     params.h5m_filepath = params.data_dir / f"{params.mesh_name_appended}.h5m"
 
     params.read_med_initial_log_file = params.data_dir / f"{params.mesh_name_appended}_read_med.log"
+    params.partition_log_file = params.data_dir / f"{params.mesh_name_appended}_partition.log"
     params.config_file = params.data_dir / "bc.cfg"
     params.log_file = params.data_dir /  f"result_{params.mesh_name_appended}.log"
     if not os.path.exists(params.log_file):

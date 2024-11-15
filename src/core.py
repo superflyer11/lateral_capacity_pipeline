@@ -27,27 +27,30 @@ def generate_mesh(params):
         import mesh_create_test_2D as mshcrte
     elif params.case_name == "test_3D":
         import mesh_create_test_3D as mshcrte
-    elif params.case_name == "pile":
+    elif params.case_name in ["pile", "pile_manual"]:
         import mesh_create_pile as mshcrte
     else:
         raise NotImplementedError("2024-10-30: no mesh for this use case yet! (Or use case not defined yet)")    
     if params.case_name in ["test_2D", "test_3D"]:
         geo = mshcrte.draw_mesh(params)
         params.physical_groups = mshcrte.add_physical_groups(params, geo)
-    elif params.case_name == "pile_problem":
-        if params.mode == "auto":
-            # Thomas Lai 2024, not confirmed the mesh converges yet
-            geo = mshcrte.draw_mesh_auto(params)
-            params.physical_groups = mshcrte.generate_physical_groups_auto(params, geo)
-            mshcrte.add_physical_groups(params.physical_groups)
-            mshcrte.finalize_mesh(params)
-        elif params.mode == "manual":
-            # Emma Fontaine 2023
-            geo = mshcrte.draw_mesh_manual(params)
-            params.physical_groups = mshcrte.generate_physical_groups_manual(params, geo)
-        else:
-            raise NotImplementedError("What?")
-            sys.exit()
+    elif params.case_name == "pile":
+        # Thomas Lai 2024, not confirmed the mesh converges yet
+        # issues with corner singularities
+        # geo = mshcrte.draw_mesh_auto(params)
+        # params.physical_groups = mshcrte.generate_physical_groups_auto(params, geo)
+        
+        geo = mshcrte.draw_mesh_cylinder(params)
+        params.physical_groups = mshcrte.generate_physical_groups_cylinder(params, geo)
+        params.physical_groups_dimTags = mshcrte.add_physical_groups(params.physical_groups)
+        params.physical_groups = mshcrte.finalize_mesh(params, geo, params.physical_groups, params.physical_groups_dimTags)
+    elif params.case_name == "pile_manual":
+        # Emma Fontaine 2023
+        geo = mshcrte.draw_mesh_manual(params)
+        params.physical_groups = mshcrte.generate_physical_groups_manual(params, geo)
+    else:
+        raise NotImplementedError("What?")
+        sys.exit()
     params.physical_groups = mshcrte_common.check_block_ids(params,params.physical_groups)
     params.physical_groups = mshcrte_common.generate_config(params,params.physical_groups)
     mshcrte_common.inject_configs(params)
@@ -96,12 +99,13 @@ def mofem_compute(params):
         f"-order {params.order} "
         f"-contact_order 0 "
         f"-sigma_order 0 "  # play around with this in the future?
+        f"{'-base demkowicz ' if (getattr(params, 'base', False) == 'hex') else ''} "
         f"-ts_dt {params.time_step} "
         f"-ts_max_time {params.final_time} "
         f"{mfront_arguments_str} "
         f"-mi_save_volume 1 "
         f"-mi_save_gauss 0 "
-        f"{'-time_scalar_file ' + str(params.time_history_file) if getattr(params, 'time_history', False) else ''}"
+        f"{'-time_scalar_file ' + str(params.time_history_file) if getattr(params, 'time_history', False) else ''} "
     ]
 
     # if params.time_history:

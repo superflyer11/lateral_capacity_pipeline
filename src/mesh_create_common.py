@@ -65,7 +65,7 @@ def get_surface_extremes(volume: int) -> cm.SurfaceTags:
     return extremes
 
 def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTags) -> cm.SurfaceTags:
-    global_tags.min_x_surfaces = [*global_tags.min_x_surfaces,  *surface_data.min_x_surfaces]
+    global_tags.min_x_surfaces = [*global_tags.min_x_surfaces, *surface_data.min_x_surfaces]
     global_tags.max_x_surfaces = [*global_tags.max_x_surfaces, *surface_data.max_x_surfaces]
     global_tags.min_y_surfaces = [*global_tags.min_y_surfaces, *surface_data.min_y_surfaces]
     global_tags.max_y_surfaces = [*global_tags.max_y_surfaces, *surface_data.max_y_surfaces]
@@ -80,7 +80,7 @@ def update_surface_tags(global_tags: cm.SurfaceTags, surface_data: cm.SurfaceTag
     return global_tags
 
 #this is not used
-def get_edge_extremes(volume: int) -> cm.SurfaceTags:
+def get_edge_extremes(volume: int) -> cm.CurveTags:
     curveLoopTags, curveTags = gmsh.model.occ.getCurveLoops(volume)
     curveTags = list(curveTags[0])
     
@@ -90,6 +90,7 @@ def get_edge_extremes(volume: int) -> cm.SurfaceTags:
     tolerance = 1e-5
     
     for curve in curveTags:
+        print(curve)
         x, y, z = gmsh.model.occ.getCenterOfMass(1, curve)
         
         # Update min_x
@@ -151,6 +152,226 @@ def update_curve_tags(global_tags: cm.CurveTags, curve_data: cm.CurveTags) -> cm
         
     return global_tags
 
+#only works globally
+def get_global_surface_extremes_2D() -> cm.SurfaceTags:
+    surfaceData = gmsh.model.occ.getEntities(2)
+    extremes = cm.SurfaceTags()
+    # Define a small tolerance for floating-point comparison
+    tolerance = 1e-5
+    
+    for surface in surfaceData:
+        surface = surface[1]
+        x, y, z = gmsh.model.occ.getCenterOfMass(2, surface)
+        
+        # Update min_x
+        if x < extremes.min_x - tolerance:
+            extremes.min_x = x
+            extremes.min_x_surfaces = [surface]  # Reset the list
+        elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
+            extremes.min_x_surfaces.append(surface)  # Append to the list
+
+        # Update max_x
+        if x > extremes.max_x + tolerance:
+            extremes.max_x = x
+            extremes.max_x_surfaces = [surface]  # Reset the list
+        elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
+            extremes.max_x_surfaces.append(surface)  # Append to the list
+
+        # Update min_y
+        if y < extremes.min_y - tolerance:
+            extremes.min_y = y
+            extremes.min_y_surfaces = [surface]  # Reset the list
+        elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
+            extremes.min_y_surfaces.append(surface)  # Append to the list
+
+        # Update max_y
+        if y > extremes.max_y + tolerance:
+            extremes.max_y = y
+            extremes.max_y_surfaces = [surface]  # Reset the list
+        elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
+            extremes.max_y_surfaces.append(surface)  # Append to the list
+
+        # Update min_z
+        if z < extremes.min_z - tolerance:
+            extremes.min_z = z
+            extremes.min_z_surfaces = [surface]  # Reset the list
+        elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
+            extremes.min_z_surfaces.append(surface)  # Append to the list
+
+        # Update max_z
+        if z > extremes.max_z + tolerance:
+            extremes.max_z = z
+            extremes.max_z_surfaces = [surface]  # Reset the list
+        elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
+            extremes.max_z_surfaces.append(surface)  # Append to the list
+
+    return extremes
+
+#only works globally
+def get_global_edge_extremes_2D() -> cm.CurveTags:
+    edgeData = gmsh.model.occ.getEntities(1)
+    extremes = cm.CurveTags()
+    # Define a small tolerance for floating-point comparison
+    tolerance = 1e-5
+    
+    for curve in edgeData:
+        curve = curve[1]
+        x, y, z = gmsh.model.occ.getCenterOfMass(1, curve)
+        
+        # Update min_x
+        if x < extremes.min_x - tolerance:
+            extremes.min_x = x
+            extremes.min_x_curves = [curve]  # Reset the list
+        elif math.isclose(x, extremes.min_x, abs_tol=tolerance):
+            extremes.min_x_curves.append(curve)  # Append to the list
+
+        # Update max_x
+        if x > extremes.max_x + tolerance:
+            extremes.max_x = x
+            extremes.max_x_curves = [curve]  # Reset the list
+        elif math.isclose(x, extremes.max_x, abs_tol=tolerance):
+            extremes.max_x_curves.append(curve)  # Append to the list
+
+        # Update min_y
+        if y < extremes.min_y - tolerance:
+            extremes.min_y = y
+            extremes.min_y_curves = [curve]  # Reset the list
+        elif math.isclose(y, extremes.min_y, abs_tol=tolerance):
+            extremes.min_y_curves.append(curve)  # Append to the list
+
+        # Update max_y
+        if y > extremes.max_y + tolerance:
+            extremes.max_y = y
+            extremes.max_y_curves = [curve]  # Reset the list
+        elif math.isclose(y, extremes.max_y, abs_tol=tolerance):
+            extremes.max_y_curves.append(curve)  # Append to the list
+
+        # Update min_z
+        if z < extremes.min_z - tolerance:
+            extremes.min_z = z
+            extremes.min_z_curves = [curve]  # Reset the list
+        elif math.isclose(z, extremes.min_z, abs_tol=tolerance):
+            extremes.min_z_curves.append(curve)  # Append to the list
+
+        # Update max_z
+        if z > extremes.max_z + tolerance:
+            extremes.max_z = z
+            extremes.max_z_curves = [curve]  # Reset the list
+        elif math.isclose(z, extremes.max_z, abs_tol=tolerance):
+            extremes.max_z_curves.append(curve)  # Append to the list
+
+    return extremes
+
+# can only be used after mesh.generate
+def get_global_node_extremes_3D() -> cm.NodeTags3D:
+    nodeTags, _, __ = gmsh.model.mesh.getNodes(0)
+    extremes = cm.NodeTags3D()
+    tolerance = 1e-5
+    
+    for nodeTag in nodeTags:
+        coords, _, __, ___ = gmsh.model.mesh.getNode(nodeTag)
+        x, y, z = coords
+
+        # Update based on z -> y -> x ordering for non-convex mesh
+        if z <= extremes.min_z + tolerance:
+            extremes.min_z = z
+            if y <= extremes.min_y + tolerance:
+                extremes.min_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_min_y_min_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_min_y_min_z_node = nodeTag
+            elif y >= extremes.max_y - tolerance:
+                extremes.max_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_max_y_min_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_max_y_min_z_node = nodeTag
+
+        elif z >= extremes.max_z - tolerance:
+            extremes.max_z = z
+            if y <= extremes.min_y + tolerance:
+                extremes.min_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_min_y_max_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_min_y_max_z_node = nodeTag
+            elif y >= extremes.max_y - tolerance:
+                extremes.max_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_max_y_max_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_max_y_max_z_node = nodeTag
+
+    return extremes
+
+def get_node_extremes_3D(array) -> cm.NodeTags3D:
+    nodeDimTags = []
+    # print(volTags)
+    # for _, volTag in volTags:
+    #     xmin, ymin, zmin, xmax, ymax, zmax = gmsh.model.occ.getBoundingBox(3, volTag)
+    #     print(gmsh.model.occ.getEntitiesInBoundingBox(xmin, ymin, zmin, xmax, ymax, zmax, 0))
+    #     nodeDimTags = [*nodeDimTags, *gmsh.model.occ.getEntitiesInBoundingBox(xmin, ymin, zmin, xmax, ymax, zmax, 0)]
+    #     # print(nodeDimTags)
+    # # nodeTags, _, __ = gmsh.model.mesh.getNodes(includeBoundary=True)
+    # # print(nodeTags)
+    extremes = cm.NodeTags3D()
+    tolerance = 0
+    for count, nodeTag in enumerate(array[0]):
+        # coords, _, __, ___ = gmsh.model.mesh.getNode(nodeDimTag[1])
+        x = array[1][3*count]
+        y = array[1][3*count+1]
+        z = array[1][3*count+2]
+        print(f"{nodeTag}")
+        print(f"{x} {y} {z}")
+        # Update based on z -> y -> x ordering for non-convex mesh
+        if z <= extremes.min_z + tolerance:
+            extremes.min_z = z
+            if y <= extremes.min_y + tolerance:
+                extremes.min_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_min_y_min_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_min_y_min_z_node = nodeTag
+            elif y >= extremes.max_y - tolerance:
+                extremes.max_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_max_y_min_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_max_y_min_z_node = nodeTag
+
+        elif z >= extremes.max_z - tolerance:
+            extremes.max_z = z
+            if y <= extremes.min_y + tolerance:
+                extremes.min_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_min_y_max_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_min_y_max_z_node = nodeTag
+            elif y >= extremes.max_y - tolerance:
+                extremes.max_y = y
+                if x <= extremes.min_x + tolerance:
+                    extremes.min_x = x
+                    extremes.min_x_max_y_max_z_node = nodeTag
+                elif x >= extremes.max_x - tolerance:
+                    extremes.max_x = x
+                    extremes.max_x_max_y_max_z_node = nodeTag
+
+    return extremes
 
 #only works globally
 def get_global_node_extremes_2D(test_surface) -> cm.NodeTags2D:
@@ -184,7 +405,6 @@ def get_global_node_extremes_2D(test_surface) -> cm.NodeTags2D:
                 extremes.max_y = y
                 extremes.max_x_max_y_node = data[1]
                 continue
-    print(extremes)
     return extremes
 
 def parse_read_med(params):
@@ -313,8 +533,9 @@ def inject_configs(params):
 @ut.track_time("PARTITIONING MESH with mofem_part")
 def partition_mesh(params):
     try:
-        subprocess.run(
-                    [
+        with open(params.partition_log_file, 'w') as log_file:
+            subprocess.run(
+                [
                 params.partition_exe, 
                 '-my_file', f'{params.h5m_filepath}',
                 '-my_nparts', f'{params.nproc}',
@@ -322,8 +543,10 @@ def partition_mesh(params):
                 '-dim', f'{params.dim}',
                 '-adj_dim', f'{params.dim-1}',
             ],
-            check=True
-        )
+                stdout=log_file,
+                stderr=log_file,
+                check=True
+            )
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error partitioning mesh: {e}")
 
