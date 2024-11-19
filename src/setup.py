@@ -85,13 +85,27 @@ def initialize_paths(params):
     
     params.med_filepath = params.data_dir / f"{params.mesh_name_appended}.med"
     params.h5m_filepath = params.data_dir / f"{params.mesh_name_appended}.h5m"
+    params.finalized_mesh_filepath = params.provided_mesh if getattr(params, "provided_mesh", False) else params.h5m_filepath
+    
 
     params.read_med_initial_log_file = params.data_dir / f"{params.mesh_name_appended}_read_med.log"
     params.partition_log_file = params.data_dir / f"{params.mesh_name_appended}_partition.log"
     params.config_file = params.data_dir / "bc.cfg"
     params.log_file = params.data_dir /  f"result_{params.mesh_name_appended}.log"
+    params.total_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_total_force.log"
+    params.FIX_X_1_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_FIX_X_1_force.log"
+    params.DOFs_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_DOFs.log"
+    params.ux_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_ux.log"
+    
+    
     if not os.path.exists(params.log_file):
         with open(params.log_file, 'w'): pass
+    # if not os.path.exists(params.total_force_log_file):
+    #     with open(params.total_force_log_file, 'w'): pass
+    # if not os.path.exists(params.force_log_file):
+    #     with open(params.force_log_file, 'w'): pass
+    # if not os.path.exists(params.DOFs_log_file):
+    #     with open(params.DOFs_log_file, 'w'): pass
 
     params.part_file = os.path.splitext(params.h5m_filepath)[0] + "_" + str(params.nproc) + "p.h5m"
     params.time_history_file = params.data_dir / f"body_force_hist.txt"

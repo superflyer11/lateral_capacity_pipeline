@@ -1,6 +1,37 @@
 import numpy as np
 
 # Function to calculate principal stresses and directions
+# def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz):
+#     sig_1 = []
+#     sig_2 = []
+#     sig_3 = []
+
+#     for i in range(len(sig_xx)):
+#         # Create stress tensor
+#         stress_tensor = np.array([
+#             [sig_xx[i], sig_xy[i], sig_xz[i]],
+#             [sig_xy[i], sig_yy[i], sig_yz[i]],
+#             [sig_xz[i], sig_yz[i], sig_zz[i]]
+#         ])
+
+#         # Calculate principal stresses (eigenvalues)
+#         principal_stresses, _ = np.linalg.eigh(stress_tensor)
+#         principal_stresses = np.sort(principal_stresses)[::-1]  # Sort in descending order
+
+#         # Append principal stresses to respective lists
+#         sig_1.append(principal_stresses[0])
+#         sig_2.append(principal_stresses[1])
+#         sig_3.append(principal_stresses[2])
+
+#     # Convert lists to numpy arrays
+#     sig_1 = np.array(sig_1)
+#     sig_2 = np.array(sig_2)
+#     sig_3 = np.array(sig_3)
+
+#     return sig_1, sig_2, sig_3
+
+# import numpy as np
+
 def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz):
     sig_1 = []
     sig_2 = []
@@ -14,9 +45,22 @@ def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz)
             [sig_xz[i], sig_yz[i], sig_zz[i]]
         ])
 
-        # Calculate principal stresses (eigenvalues)
-        principal_stresses, _ = np.linalg.eigh(stress_tensor)
-        principal_stresses = np.sort(principal_stresses)[::-1]  # Sort in descending order
+        # Check for invalid values
+        if not np.isfinite(stress_tensor).all():
+            raise ValueError(f"Invalid values in stress tensor: {stress_tensor}")
+
+        # Ensure tensor symmetry
+        if not np.allclose(stress_tensor, stress_tensor.T, atol=1e-8):
+            raise ValueError(f"Stress tensor is not symmetric: {stress_tensor}")
+
+        try:
+            # Calculate principal stresses (eigenvalues)
+            principal_stresses, _ = np.linalg.eigh(stress_tensor)
+        except np.linalg.LinAlgError as e:
+            raise RuntimeError(f"Eigenvalue computation failed for tensor: {stress_tensor}") from e
+
+        # Sort principal stresses in descending order
+        principal_stresses = np.sort(principal_stresses)[::-1]
 
         # Append principal stresses to respective lists
         sig_1.append(principal_stresses[0])
@@ -29,6 +73,7 @@ def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz)
     sig_3 = np.array(sig_3)
 
     return sig_1, sig_2, sig_3
+
 
 def calculate_p(sig_1, sig_2, sig_3):
     return (sig_1 + sig_2 + sig_3) / 3

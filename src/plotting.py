@@ -301,7 +301,7 @@ def plot_2d_with_animation(x, y, xlabel, ylabel, title, color='b', scale=1, line
 
     plt.show()
 
-def create_plot(data, x_label, y_label, title, save_as):
+def create_plot(data, x_label, y_label, title, save_as, show):
     linestyle = "-"
     fig, ax = plt.subplots()
     max_x, max_y = float('-inf'), float('-inf')
@@ -311,7 +311,7 @@ def create_plot(data, x_label, y_label, title, save_as):
                 mask_elastic = abs(y) < abs(cutoff)
                 mask_plastic = abs(y) >= abs(cutoff)
                 plt.plot(x[mask_elastic], y[mask_elastic], linestyle=linestyle, color='b', label=f"label")
-                plt.plot(x[mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
+                plt.plot(x [mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
             else:
                 plt.plot(x, y, linestyle=linestyle, color=color, label=label)
             max_x = max(max_x, max(x))
@@ -326,10 +326,20 @@ def create_plot(data, x_label, y_label, title, save_as):
     ax.grid(True)
     if save_as:
         plt.savefig(save_as)
+        if not show:
+            plt.close()
         return save_as
-
+    elif not show:
+        plt.close()
 def plot_sig_eq_vs_e_zz(sig_eq, e_zz, save_as: str =None):
     return plot_2d_with_quiver(e_zz, sig_eq, 'Axial Strain $\epsilon_{zz}$', 'Equivalent Stress $\sigma_{eq}$', '$\sigma_{eq}$ - Axial Strain',save_as=save_as)
 
+
+
+def plot_x_ys(x_array: list, y_arrays, labels: list, cutoffs=None, x_label="", y_label="", title="", save_as: str = None, show=False):
+    data = []
+    for i in range(len(y_arrays)):
+        data.append((x_array, y_arrays[i], labels[i], 'g', None))
+    return create_plot(data, x_label, y_label, title, save_as, show)
 
 

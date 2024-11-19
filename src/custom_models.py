@@ -6,6 +6,7 @@ from typing_extensions import Self
 from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny, root_validator
 import gmsh
 from enum import Enum
+from pathlib import Path
 
 # one giant glob of parameters
 class AttrDict(dict):
@@ -15,6 +16,14 @@ class AttrDict(dict):
         raise AttributeError(f"'AttrDict' object has no attribute '{attr}'")
     def __setattr__(self, key, value):
         self[key] = value
+
+class BulkAnalysisProps(BaseModel):
+    data_dir: Path
+    mesh_name_appended: str
+    total_force_log_file: Path
+    FIX_X_1_force_log_file: Path
+    DOFs_log_file: Path
+    ux_log_file: Path
 
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
@@ -78,6 +87,8 @@ class GeometryTagManager(BaseModel):
     curved_surfaces: list
     disp_node: int
     origin_node: int
+    inner_node: int
+    symmetry_surface: int
     # interface_volumes: list
     # soil_surfaces: SurfaceTags
     # pile_surfaces: SurfaceTags
@@ -715,6 +726,40 @@ class PileManager(BaseModel):
             return [outer_tag, inner_tag]
             
 
+class Point(BaseModel):
+    x: float
+    y: float
+    z: float
+    
+    def flat(self):
+        return [str(self.x), str(self.y), str(self.z)]
+    
+    def string(self):
+        return f"{self.x}_{self.y}_{self.z}"
+    
+    def point_against_time_csv_filepath(self, params):
+        return params.data_dir / f"{params.mesh_name_appended}_{self.string()}_to_time.csv"
+    
+    def graph_dir(self, params):
+        dir = params.data_dir / self.string()
+        dir.mkdir(parents=True,exist_ok=True)
+        return dir
+    
+class Line(BaseModel):
+    pt1: Point
+    pt2: Point
+    
+    def line_against_depth_csv_filepath(self, params):
+        return params.data_dir / f"{params.mesh_name_appended}_{self.string()}_to_depth.csv"
+    
+    def string(self):
+        return f"{self.pt1.x}_{self.pt1.y}_{self.pt1.z}_to_{self.pt2.x}_{self.pt2.y}_{self.pt2.z}"
+    
+    def graph_dir(self, params):
+        dir = params.data_dir / self.string()
+        dir.mkdir(parents=True,exist_ok=True)
+        return dir
+
 class MeshsetInfo(BaseModel):
     meshset_id: int
     name: str
@@ -724,11 +769,11 @@ class PhysicalGroupType(Enum):
     BOUNDARY_CONDITION = 2
 
 class PhysicalGroup(BaseModel):
-    dim: int
-    tags: List[int]
+    dim: int | None = None
+    tags: List[int] | None = None
     name: str
     meshnet_id: Optional[int] = None
-    group_type: PhysicalGroupType
+    group_type: PhysicalGroupType | None = None
     preferred_model: PropertyTypeEnum | None = PropertyTypeEnum.le
     props: dict[PropertyTypeEnum, MaterialProperty] = {} 
     bc: Optional[BoundaryCondition] = None

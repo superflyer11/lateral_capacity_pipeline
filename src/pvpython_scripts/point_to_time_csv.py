@@ -33,7 +33,7 @@ def to_time(params):
 params = AttrDict()
 params.vtk_dir = sys.argv[1] 
 params.csv_filepath = sys.argv[2]
-params.point_x = str(int(sys.argv[3]))
-params.point_y = str(int(sys.argv[4]))
-params.point_z = str(int(sys.argv[5]))
+params.point_x = str(sys.argv[3])
+params.point_y = str(sys.argv[4])
+params.point_z = str(sys.argv[5])
 to_time(params)

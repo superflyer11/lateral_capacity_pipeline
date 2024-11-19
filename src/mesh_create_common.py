@@ -537,7 +537,7 @@ def partition_mesh(params):
             subprocess.run(
                 [
                 params.partition_exe, 
-                '-my_file', f'{params.h5m_filepath}',
+                '-my_file', f'{params.finalized_mesh_filepath}',
                 '-my_nparts', f'{params.nproc}',
                 '-output_file', f'{params.part_file}',
                 '-dim', f'{params.dim}',

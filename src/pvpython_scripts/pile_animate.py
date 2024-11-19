@@ -91,6 +91,8 @@ def animate(params):
         # get 2D transfer function for 'STRAIN'
         sTRAINTF2D = GetTransferFunction2D('STRAIN')
 
+        renderView1.ApplyIsometricView()
+
         # Rescale transfer function
         sTRAINLUT.RescaleTransferFunction(params.color_min, params.color_max)
 
@@ -104,10 +106,12 @@ def animate(params):
         layout1.SetSize(2252, 867)
 
         # current camera placement for renderView1
-        renderView1.InteractionMode = '2D'
-        renderView1.CameraPosition = [0.0, 0.0, 67.0]
-        renderView1.CameraParallelScale = 14.142135623730951
-        
+        renderView1.InteractionMode = '3D'
+        # current camera placement for renderView1
+        renderView1.CameraPosition = [118.32186246056587, -100.860074348063, 25.74130017413103]
+        renderView1.CameraFocalPoint = [16.347277576435832, 10.58100130268677, -25.398760723126667]
+        renderView1.CameraViewUp = [-0.1961976941304353, 0.25496917539263453, 0.9468353523276897]
+        renderView1.CameraParallelScale = 92.87087810503355
         # renderView1.Update()
         print("Number of frames:", len(files))
         animScene = GetAnimationScene()
