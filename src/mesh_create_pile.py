@@ -637,7 +637,7 @@ def add_physical_groups(physical_groups: List[cm.PhysicalGroup]) -> None:
 def finalize_mesh(params, geo, physical_groups, physical_groups_dimTags):
     # Setting Gmsh options and generating mesh
     # radial_divisions = 10
-    radial_divisions = params.mesh_radial_divisions
+    radial_divisions = params.cylinder_manager.mesh_radial_divisions
     try:
         gmsh.option.setNumber('Mesh.Algorithm', 8)
         gmsh.option.setNumber('Mesh.Algorithm3D', 10)
@@ -706,7 +706,7 @@ def finalize_mesh(params, geo, physical_groups, physical_groups_dimTags):
                         
                         #radial
                         elif math.isclose(y,0,abs_tol=tolerance) and any(math.isclose(z, flat_z, abs_tol=tolerance) for flat_z in list_of_flat_surface_z):
-                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 15, 'Progression', params.cylinder_manager.radial_progression)
+                            gmsh.model.mesh.setTransfiniteCurve(curveTag, 15, 'Progression', params.cylinder_manager.mesh_radial_progression)
                         #along the vertical edges
                         elif length > 10 and not(any(math.isclose(z, flat_z, abs_tol=tolerance) for flat_z in list_of_flat_surface_z)):
                             gmsh.model.mesh.setTransfiniteCurve(curveTag, 10, 'Progression', 1.2)

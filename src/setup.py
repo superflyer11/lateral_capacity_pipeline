@@ -2,6 +2,7 @@ import time
 import json
 import os
 from pathlib import Path
+import utils as ut
 
 
 def days_since_epoch():
@@ -23,37 +24,17 @@ def log_sim_entry(params):
     else:
         logs = {}
 
-    # Create the params dictionary for the log entry
-    if params.case_name in ["test_2D", "test_3D"]:
-        params_dict = {
-            "test_volume": params.tester.model_dump(serialize_as_any=True),
-            "prescribed_force": params.prescribed_force.model_dump() if getattr(params, 'prescribed_force', None) else None,
-            "prescribed_disp": params.prescribed_disp.model_dump() if getattr(params, 'prescribed_disp', None) else None,
-        }
-    elif params.case_name in ["pile", "pile_manual"]:
-        params_dict = {
-            "mesh": params.mode,
-            "pile_manager": params.pile_manager.model_dump(serialize_as_any=True),
-            "box_manager": params.box_manager.model_dump(serialize_as_any=True),
-            "prescribed_force": params.prescribed_force.model_dump() if getattr(params, 'prescribed_force', None) else None,
-            "prescribed_disp": params.prescribed_disp.model_dump() if getattr(params, 'prescribed_disp', None) else None,
-        }
-
-
-    # Filter simulations for today and count simulations with the same parameters
-    # params.prior_sims_with_same_params = [log for log in logs.values() if log['params'] == params_dict]
     params.new_sim_number = len(logs) + 1
     # Determine simulation number for today prior to this simulation
     params.prior_sims_today = len([log for log in logs.values() if log['date_of_sim'] == params.date_of_sim])
-    params.new_sim_number_today = params.prior_sims_today + 1
+    params.sim_otd = params.prior_sims_today + 1
 
     # Create the log entry as a dictionary
     log_entry = {
         "days_since_epoch": params.days_since_epoch,
-        "sim_number_of_the_day": params.new_sim_number_today,
+        "sim_otd": params.sim_otd,
         "date_of_sim": params.date_of_sim,
         "time_of_sim": params.time_of_sim,
-        "params": params_dict,
     }
 
     # Add the new entry to the logs
@@ -67,14 +48,15 @@ def log_sim_entry(params):
     with open(params.global_log_file, 'w') as f:
         json.dump(logs, f, indent=4)
 
-    print(f"Simulation #{params.new_sim_number_today} for the day.")
+    ut.print_message_in_box_plain(f"Simulation #{params.sim_otd} for the day.")
     return params
+
 
 def initialize_paths(params):
     params.template_sdf_file = params.wk_dir / f"src/template_sdf.py"
     params.sdf_file = params.wk_dir / f"src/sdf.py"
 
-    params.data_dir = Path(f"/mofem_install/jupyter/thomas/mfront_example_test/simulations/{params.simulation_name}")
+    params.data_dir = params.wk_dir / "simulations" / f"{params.simulation_name}"
     params.data_dir.mkdir(parents=True, exist_ok=True)
 
     params.vtk_dir = params.data_dir / f"vtks"
@@ -85,7 +67,7 @@ def initialize_paths(params):
     
     params.med_filepath = params.data_dir / f"{params.mesh_name_appended}.med"
     params.h5m_filepath = params.data_dir / f"{params.mesh_name_appended}.h5m"
-    params.finalized_mesh_filepath = params.provided_mesh if getattr(params, "provided_mesh", False) else params.h5m_filepath
+    params.finalized_mesh_filepath = params.custom_mesh_filepath if getattr(params, "custom_mesh_filepath", False) else params.h5m_filepath
     
 
     params.read_med_initial_log_file = params.data_dir / f"{params.mesh_name_appended}_read_med.log"
@@ -100,12 +82,6 @@ def initialize_paths(params):
     
     if not os.path.exists(params.log_file):
         with open(params.log_file, 'w'): pass
-    # if not os.path.exists(params.total_force_log_file):
-    #     with open(params.total_force_log_file, 'w'): pass
-    # if not os.path.exists(params.force_log_file):
-    #     with open(params.force_log_file, 'w'): pass
-    # if not os.path.exists(params.DOFs_log_file):
-    #     with open(params.DOFs_log_file, 'w'): pass
 
     params.part_file = os.path.splitext(params.h5m_filepath)[0] + "_" + str(params.nproc) + "p.h5m"
     params.time_history_file = params.data_dir / f"body_force_hist.txt"
@@ -116,18 +92,35 @@ def initialize_paths(params):
     params.strain_animation_filepath_png_ffmpeg_regex =  params.strain_animation_temp_dir / f"{params.mesh_name_appended}.%04d.png"
     params.strain_animation_filepath_mp4 = params.data_dir /  f"{params.mesh_name_appended}.mp4"
     
-    params.point_to_time_filepath = params.data_dir / f"{params.mesh_name_appended}_to_time.csv"
-
     return params
 
 def setup(params):
-    params.days_since_epoch = days_since_epoch()
-    params.time_of_sim = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-    params.date_of_sim = time.strftime("%Y%m%d", time.localtime())
-    params = log_sim_entry(params)
-    params.simulation_name = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}_{params.time_of_sim}_{params.global_default_model.name}"
-    params.mesh_name_appended = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.new_sim_number_today}_{params.global_default_model.name}"
+    if getattr(params, "days_since_epoch", False) and getattr(params, "sim_otd", False) and getattr(params, "FEA_completed", False):
+        import re
+        # Define the pattern to match the folder name
+        pattern = re.compile(rf"{params.case_name}_day_{params.days_since_epoch}_sim_{params.sim_otd}_(\d{{8}}_\d{{6}})_{params.soil_model.name}")
+        # Search for the folder in the specified directory
+        for folder_name in os.listdir(params.wk_dir / "simulations"):
+            match = pattern.match(folder_name)
+            if match:
+                date_time_str = match.group(1)
+                params.time_of_sim = date_time_str
+                params.date_of_sim = date_time_str.split('_')[0]
+                break
+        if not match:
+            raise FileNotFoundError(f"No matching folder found for pattern: {pattern.pattern}")
+    
+    else:
+        params.FEA_completed=False
+        params.days_since_epoch = days_since_epoch()
+        params.time_of_sim = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        params.date_of_sim = time.strftime("%Y%m%d", time.localtime())
+        params = log_sim_entry(params)
+        
+    params.simulation_name = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.sim_otd}_{params.time_of_sim}_{params.soil_model.name}"
+    params.mesh_name_appended = f"{params.case_name}_day_{params.days_since_epoch}_sim_{params.sim_otd}_{params.soil_model.name}"
     params = initialize_paths(params)
+    
     return params
 
 def set_display_configurations(): pass

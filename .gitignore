@@ -5,3 +5,4 @@ simulations*
 data*
 src/__pycache__
 mtest/
+user_data/

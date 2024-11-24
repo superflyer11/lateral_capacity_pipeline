@@ -530,26 +530,6 @@ def inject_configs(params):
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error injecting configs: {e}")
 
-@ut.track_time("PARTITIONING MESH with mofem_part")
-def partition_mesh(params):
-    try:
-        with open(params.partition_log_file, 'w') as log_file:
-            subprocess.run(
-                [
-                params.partition_exe, 
-                '-my_file', f'{params.finalized_mesh_filepath}',
-                '-my_nparts', f'{params.nproc}',
-                '-output_file', f'{params.part_file}',
-                '-dim', f'{params.dim}',
-                '-adj_dim', f'{params.dim-1}',
-            ],
-                stdout=log_file,
-                stderr=log_file,
-                check=True
-            )
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error partitioning mesh: {e}")
-
 def get_meshset_by_name(meshsets: List[cm.MeshsetInfo], name: str) -> Optional[cm.MeshsetInfo]:
     """
     Get a MeshsetInfo object by name from a list of MeshsetInfo objects.

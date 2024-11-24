@@ -4,6 +4,8 @@ import shutil
 import os
 import sys
 import utils as ut
+import time
+import resource
 
 
 def replace_template_sdf(params):
@@ -23,9 +25,9 @@ def replace_template_sdf(params):
 # if to decouple need to persist physical_groups (which is a list of pydantic objects), not difficult to do but have to think of if you are sure that it conforms to the mesh
 def generate_mesh(params):
     import mesh_create_common as mshcrte_common
-    if getattr(params, "provided_mesh", False):
+    if getattr(params, "custom_mesh_filepath", False):
         params.physical_groups = params.custom_generate_physical_groups(params)
-        mshcrte_common.partition_mesh(params)
+        partition_mesh(params)
         return
         
     if params.case_name == "test_2D":
@@ -36,6 +38,7 @@ def generate_mesh(params):
         import mesh_create_pile as mshcrte
     else:
         raise NotImplementedError("2024-10-30: no mesh for this use case yet! (Or use case not defined yet)")    
+    
     if params.case_name in ["test_2D", "test_3D"]:
         geo = mshcrte.draw_mesh(params)
         params.physical_groups = mshcrte.add_physical_groups(params, geo)
@@ -59,13 +62,48 @@ def generate_mesh(params):
     params.physical_groups = mshcrte_common.check_block_ids(params,params.physical_groups)
     params.physical_groups = mshcrte_common.generate_config(params,params.physical_groups)
     mshcrte_common.inject_configs(params)
-    mshcrte_common.partition_mesh(params)
+    partition_mesh(params)
     return
+
+@ut.track_time("PARTITIONING MESH with mofem_part")
+def partition_mesh(params):
+    try:
+        with open(params.partition_log_file, 'w') as log_file:
+            process = subprocess.Popen(
+                [
+                    params.partition_exe, 
+                    '-my_file', f'{params.finalized_mesh_filepath}',
+                    '-my_nparts', f'{params.nproc}',
+                    '-output_file', f'{params.part_file}',
+                    '-dim', f'{params.dim}',
+                    '-adj_dim', f'{params.dim-1}',
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1  # Line-buffered
+            )
+            
+            # Read the output line by line
+            for line in iter(process.stdout.readline, ''):
+                print(line, end='')  # Print to console
+                log_file.write(line)  # Write to log file
+                log_file.flush()  # Ensure the line is written immediately
+            
+            process.stdout.close()
+            process.wait()
+            
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, process.args)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Error partitioning mesh: {e}")
 
 @ut.track_time("COMPUTING")
 def mofem_compute(params):
+    
     result = subprocess.run("rm -rf out*", shell=True, text=True)
-    # !rm -rf out*
+    
+    #not used, but needed for contact exe
     replace_template_sdf(params)
     
     mfront_arguments = []
@@ -103,7 +141,7 @@ def mofem_compute(params):
         f"-sdf_file {params.sdf_file} "
         f"-order {params.order} "
         f"-contact_order 0 "
-        f"-sigma_order 0 "  # play around with this in the future?
+        f"-sigma_order 0 "
         f"{'-base demkowicz ' if (getattr(params, 'base', False) == 'hex') else ''} "
         f"-ts_dt {params.time_step} "
         f"-ts_max_time {params.final_time} "
@@ -112,8 +150,22 @@ def mofem_compute(params):
         f"-mi_save_gauss 0 "
         f"{'-time_scalar_file ' + str(params.time_history_file) if getattr(params, 'time_history', False) else ''} "
     ]
-    # Open the log file for writing
+    
+    start_time = time.time()
+    usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
+    
+    # Log the command
     with open(params.log_file, 'w') as log_file:
+        log_file.write(f"Mesh: {params.finalized_mesh_filepath}\n")
+        log_file.flush()
+    
+    # Log the command
+    with open(params.log_file, 'w') as log_file:
+        log_file.write(f"Command: {' '.join(command)}\n")
+        log_file.flush()
+
+    # Open the log file for writing
+    with open(params.log_file, 'a') as log_file:
         # Start the subprocess
         process = subprocess.Popen(
             command,
@@ -154,6 +206,19 @@ def mofem_compute(params):
         # Wait for the process to complete
         process.wait()
 
+        end_time = time.time()
+        usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
+        
+        user_cpu_time = usage_end.ru_utime - usage_start.ru_utime
+        system_cpu_time = usage_end.ru_stime - usage_start.ru_stime
+        params.compute_cpu_time = user_cpu_time + system_cpu_time
+        params.compute_wall_time = end_time - start_time
+        
+        log_file.write(f"Total CPU time: {params.compute_cpu_time:.6f} seconds\n")
+        log_file.write(f"Wall-clock time: {params.compute_wall_time:.6f} seconds\n")
+        log_file.flush()
+        
+
     # # Check the return code
     # if process.returncode != 0:
     #     print(f"Process exited with return code {process.returncode}")
@@ -166,7 +231,8 @@ def mofem_compute(params):
     )
     # subprocess.run(f"grep 'Force:' {params.log_file} > {params.force_log_file}", shell=True)
     subprocess.run(f"grep 'nb global dofs' {params.log_file} > {params.DOFs_log_file}", shell=True)
-    subprocess.run(f"grep 'Ux time' {params.log_file} > {params.ux_log_file}", shell=True)
+    
+    
 
 @ut.track_time("CONVERTING FROM .htm TO .vtk")
 def export_to_vtk(params):
@@ -196,13 +262,14 @@ def export_to_vtk(params):
                 raise RuntimeError(f"Failed to move {vtk_file}: {e}")
     else:
         raise RuntimeError(f"Failed to list .vtk files: {vtk_files.stderr}")
+    
+    # Step 3: Remove all `.h5m` files
     h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
     if h5m_files.returncode == 0:
         h5m_files_list = h5m_files.stdout.splitlines()
         if not h5m_files_list:
             raise RuntimeError("No .vtk files found.")
             return
-        # Step 3: Move each `.vtk` file to `params.data_dir`
         for h5m_file in h5m_files_list:
             try:
                 os.remove(h5m_file)
@@ -214,3 +281,28 @@ def export_to_vtk(params):
     h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
 
 
+def quick_visualization(params):
+    pv.set_plot_theme("document")
+
+    from pyvirtualdisplay import Display
+    display = Display(backend="xvfb", visible=False, size=(1024, 768))
+    display.start()
+    vtk_files = subprocess.run(f"ls -c1 {params.vtk_dir}/*.vtk | sort -V", shell=True, text=True, capture_output=True)
+    if vtk_files.returncode == 0:
+        files = [vtk_file for vtk_file in vtk_files.stdout.splitlines()]
+        final_file = files[-1]
+        mesh = pv.read(final_file)
+        mesh=mesh.shrink(0.95) 
+        warp_factor = 1.0
+        # mesh = mesh.warp_by_vector(vectors="U", factor = warp_factor)
+        # show_field = "STRESS"
+        show_field = "STRAIN" # U: displacement
+        # show_field = "STRAIN" # U: displacement
+        # print(mesh.point_data)
+        # if mesh.point_data[show_field].shape[1] > 3:
+            # cmap = "Spectral"
+        p = pv.Plotter(notebook=True)
+        p.add_mesh(mesh, scalars=show_field)
+        # p.camera_position = [(-10, 0, 10), (0.0, 0.0, 0.0), (0.0, 1.0, 0.0)]
+        p.camera_position = 'xz'
+        p.show(jupyter_backend='ipygany')

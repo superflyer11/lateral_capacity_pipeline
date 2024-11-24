@@ -301,12 +301,19 @@ def plot_2d_with_animation(x, y, xlabel, ylabel, title, color='b', scale=1, line
 
     plt.show()
 
-def create_plot(data, x_label, y_label, title, save_as, show):
+def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero, annotate_last_datapoint):
     linestyle = "-"
     fig, ax = plt.subplots()
     max_x, max_y = float('-inf'), float('-inf')
+    min_x, min_y = float('inf'), float('inf')
     for x, y, label, color, cutoff in data:
         if x is not None and y is not None:
+            # Convert to NumPy array if data is a Pandas Series
+            if isinstance(x, pd.Series):
+                x = x.to_numpy()
+            if isinstance(y, pd.Series):
+                y = y.to_numpy()
+                
             if cutoff:
                 mask_elastic = abs(y) < abs(cutoff)
                 mask_plastic = abs(y) >= abs(cutoff)
@@ -314,14 +321,26 @@ def create_plot(data, x_label, y_label, title, save_as, show):
                 plt.plot(x [mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
             else:
                 plt.plot(x, y, linestyle=linestyle, color=color, label=label)
+                ax.annotate(f'{y[-1]:.4g}', xy=(x[-1], y[-1]), xytext=(x[-1], y[-1]*0.92), textcoords='data',
+                            fontsize=8,  # Adjust font size
+                            bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+                            arrowprops=dict(facecolor='black', shrink=0.05, headwidth=5, headlength=5, width=0.5))
             max_x = max(max_x, max(x))
             max_y = max(max_y, max(y))
+            min_x = min(min_x, min(x))
+            min_y = min(min_y, min(y))
+    
+    if enforce_pass_through_zero:
+        if max_y < 0:
+            ax.set_ylim(top=0)
+        elif min_y > 0:
+            ax.set_ylim(bottom=0)
     
     # Add axis labels and title
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
-    ax.legend()
+    # ax.legend()
 
     ax.grid(True)
     if save_as:
@@ -336,10 +355,10 @@ def plot_sig_eq_vs_e_zz(sig_eq, e_zz, save_as: str =None):
 
 
 
-def plot_x_ys(x_array: list, y_arrays, labels: list, cutoffs=None, x_label="", y_label="", title="", save_as: str = None, show=False):
+def plot_x_ys(x_array: list, y_arrays, labels: list, colors: list | None = None, cutoffs=None, x_label="", y_label="", title="", save_as: str = None, show=False, enforce_pass_through_zero=False,annotate_last_datapoint=False):
     data = []
     for i in range(len(y_arrays)):
-        data.append((x_array, y_arrays[i], labels[i], 'g', None))
-    return create_plot(data, x_label, y_label, title, save_as, show)
+        data.append((x_array, y_arrays[i], labels[i], colors[i] if colors else None, None))
+    return create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero,annotate_last_datapoint)
 
 

@@ -51,6 +51,18 @@ def print_message_in_box(message: str) -> Callable:
         return wrapper
     return decorator
 
+def print_message_in_box_plain(message: str) -> Callable:
+    message_length = len(message)
+    border_length = message_length + 4  # Adjust for padding and borders
+    top_border = "╭" + "─" * border_length + "╮"
+    middle_line = f"│  {message}  │"
+    bottom_border = "╰" + "─" * border_length + "╯"
+    
+    # Print the formatted message
+    print(top_border)
+    print(middle_line)
+    print(bottom_border)
+
 def track_time(message: str) -> Callable:
     """
     Decorator that prints a message and tracks the execution time of a function.

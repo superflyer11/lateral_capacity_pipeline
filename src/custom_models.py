@@ -24,6 +24,7 @@ class BulkAnalysisProps(BaseModel):
     FIX_X_1_force_log_file: Path
     DOFs_log_file: Path
     ux_log_file: Path
+    full_fe_log: Path
 
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
@@ -184,8 +185,7 @@ class PropertyTypeEnum(str, Enum):
     vM = "VMSimo" #tested to be have the same results as mfront gallery implementation
     dp = "DruckerPragerSimple" 
     dpNA = "DruckerPragerNonAssociated" 
-    dp_hyperbolic = "DruckerPragerHyperboloidal"
-    # drucker_prager = "DruckerPragerParaboloidal" # fails mfront integration
+    dpHYPER = "DruckerPragerHyperboloidal"
     mcc = "ModCamClay_semiExpl" # none of them is working so far
 
 class MaterialProperty(BaseModel):
@@ -302,7 +302,7 @@ class DPNAProps(MaterialProperty):
     def mi_param_4(self) -> float:
         return self.poisson_ratio
 
-class DruckerPragerHyperbolicProperties(MaterialProperty):
+class DruckerPragerHYPERProperties(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
     phi: float
@@ -493,10 +493,8 @@ class CylinderManager(BaseModel):
     pile_R: float
     pile_r: float
     new_layer_z: float = 0
-    far_field_size: float = 5
-    near_field_dist: float = 40
-    near_field_size: float = 1
-    radial_progression: float = 1.15
+    mesh_radial_progression: float = 1.15
+    mesh_radial_divisions: int = 10
     layers: list[SoilLayer]
     
     
