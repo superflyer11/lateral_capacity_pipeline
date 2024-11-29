@@ -6,7 +6,7 @@ import sys
 import utils as ut
 import time
 import resource
-
+import signal
 
 def replace_template_sdf(params):
     regex = r"\{(.*?)\}"
@@ -100,7 +100,8 @@ def partition_mesh(params):
 
 @ut.track_time("COMPUTING")
 def mofem_compute(params):
-    
+    os.chdir(params.data_dir)
+    shutil.copy(params.options_file, params.data_dir / "param_file.petsc")
     result = subprocess.run("rm -rf out*", shell=True, text=True)
     
     #not used, but needed for contact exe
@@ -135,7 +136,7 @@ def mofem_compute(params):
     command = [
         "bash", "-c",
         f"export OMPI_MCA_btl_vader_single_copy_mechanism=none && "
-        f"nice -n 10 mpirun --oversubscribe --allow-run-as-root "
+        f"time nice -n 10 mpirun --oversubscribe --allow-run-as-root "
         f"-np {params.nproc} {params.exe} "
         f"-file_name {params.part_file} "
         f"-sdf_file {params.sdf_file} "
@@ -147,8 +148,9 @@ def mofem_compute(params):
         f"-ts_max_time {params.final_time} "
         f"{mfront_arguments_str} "
         f"-mi_save_volume 1 "
-        f"-mi_save_gauss 0 "
+        f"-mi_save_gauss {params.save_gauss} "
         f"{'-time_scalar_file ' + str(params.time_history_file) if getattr(params, 'time_history', False) else ''} "
+        # f"-options_file {params.options_file} "
     ]
     
     start_time = time.time()
@@ -156,56 +158,76 @@ def mofem_compute(params):
     
     # Log the command
     with open(params.log_file, 'w') as log_file:
-        log_file.write(f"Mesh: {params.finalized_mesh_filepath}\n")
+        log_file.write(f"================== Mesh: ====================\n")
+        log_file.write(f"{params.finalized_mesh_filepath}\n")
         log_file.flush()
     
     # Log the command
-    with open(params.log_file, 'w') as log_file:
-        log_file.write(f"Command: {' '.join(command)}\n")
-        log_file.flush()
-
-    # Open the log file for writing
     with open(params.log_file, 'a') as log_file:
-        # Start the subprocess
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=4096  # Use a larger buffer for efficiency
-        )
+        log_file.write(f"================ Command: ====================\n")
+        log_file.write(f"{' '.join(command)}\n")
+        log_file.flush()
         
-        # Buffer for batch writing to log file
-        log_buffer = []
+    # Append the contents of the PETSc params file to the log file
+    with open(params.options_file, 'r') as petsc_file:
+        petsc_params = petsc_file.read()
+    
+    with open(params.log_file, 'a') as log_file:
+        log_file.write(f"================ Petsc params file: ====================\n")
+        log_file.write(petsc_params)
+        log_file.write(f"========================================================\n")
+        log_file.flush()
+    
+    try:
+        # Open the log file for writing
+        with open(params.log_file, 'a') as log_file:
+            # Start the subprocess
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=4096  # Use a larger buffer for efficiency
+            )
+            
+            # Buffer for batch writing to log file
+            log_buffer = []
 
-        # Read the output line by line
-        for line in iter(process.stdout.readline, ''):
-            # Print to console
-            print(line, end='')
+            # Read the output line by line
+            for line in iter(process.stdout.readline, ''):
+                # Print to console
+                print(line, end='')
 
-            # Append to the log buffer
-            log_buffer.append(line)
+                # Append to the log buffer
+                log_buffer.append(line)
 
-            # Flush to file every 50 lines
-            if len(log_buffer) >= 50:
+                # Flush to file every 50 lines
+                if len(log_buffer) >= 50:
+                    log_file.writelines(log_buffer)
+                    log_file.flush()
+                    log_buffer.clear()
+
+                # Check for specific error message
+                if "Mfront integration failed" in line:
+                    print("Error detected: Mfront integration failed")
+                    process.kill()
+                    log_file.writelines(log_buffer)
+                    log_file.flush()
+                    log_buffer.clear()
+
+            # Write any remaining lines in the buffer
+            if log_buffer:
                 log_file.writelines(log_buffer)
                 log_file.flush()
-                log_buffer.clear()
 
-            # Check for specific error message
-            if "Mfront integration failed" in line:
-                print("Error detected: Mfront integration failed")
-                process.kill()
-                sys.exit(1)
+            # Wait for the process to complete
+            process.wait()
 
-        # Write any remaining lines in the buffer
-        if log_buffer:
-            log_file.writelines(log_buffer)
-            log_file.flush()
-
-        # Wait for the process to complete
+    except KeyboardInterrupt:
+        print("Process interrupted by user")
+        process.kill()
         process.wait()
-
+    finally:
         end_time = time.time()
         usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
         
@@ -214,15 +236,10 @@ def mofem_compute(params):
         params.compute_cpu_time = user_cpu_time + system_cpu_time
         params.compute_wall_time = end_time - start_time
         
-        log_file.write(f"Total CPU time: {params.compute_cpu_time:.6f} seconds\n")
-        log_file.write(f"Wall-clock time: {params.compute_wall_time:.6f} seconds\n")
-        log_file.flush()
-        
-
-    # # Check the return code
-    # if process.returncode != 0:
-    #     print(f"Process exited with return code {process.returncode}")
-    #     # sys.exit(process.returncode)     # Exit with the subprocess's return code
+        with open(params.log_file, 'a') as log_file:
+            log_file.write(f"Total CPU time: {params.compute_cpu_time:.6f} seconds\n")
+            log_file.write(f"Wall-clock time: {params.compute_wall_time:.6f} seconds\n")
+            log_file.flush()
 
     subprocess.run(f"grep 'Total force:' {params.log_file} > {params.total_force_log_file}", shell=True)
     subprocess.run(
@@ -234,12 +251,13 @@ def mofem_compute(params):
     
     
 
-@ut.track_time("CONVERTING FROM .htm TO .vtk")
+@ut.track_time("CONVERTING FROM .h5m TO .vtk")
 def export_to_vtk(params):
-    # Step 1: List all `out_*h5m` files and convert them to `.vtk` using `convert.py`
-    out_to_vtk = subprocess.run("ls -c1 out_*h5m", shell=True, text=True, capture_output=True)
+    os.chdir(params.data_dir)
+    # Step 1: List all `out_mi*.h5m` files and convert them to `.vtk` using `convert.py`
+    out_to_vtk = subprocess.run("ls -c1 out_mi*.h5m", shell=True, text=True, capture_output=True)
     if out_to_vtk.returncode == 0:
-        convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 out_*h5m final.vtk", shell=True)
+        convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 out_mi*.h5m", shell=True)
         if convert_result.returncode == 0:
             print("Conversion to VTK successful.")
         else:
@@ -253,35 +271,43 @@ def export_to_vtk(params):
         if not vtk_files_list:
             print("No .vtk files found.")
             return
-        # Step 3: Move each `.vtk` file to `params.data_dir`
+        # Step 3: Move each `.vtk` file to the appropriate directory
         for vtk_file in vtk_files_list:
             try:
-                shutil.move(vtk_file, os.path.join(params.vtk_dir, vtk_file))
-                print(f"Moved {vtk_file} to {params.vtk_dir}")
+                if "gauss" in vtk_file:
+                    shutil.move(vtk_file, os.path.join(params.vtk_gauss_dir, vtk_file))
+                    print(f"Moved {vtk_file} to {params.vtk_gauss_dir}")
+                else:
+                    shutil.move(vtk_file, os.path.join(params.vtk_dir, vtk_file))
+                    print(f"Moved {vtk_file} to {params.vtk_dir}")
             except Exception as e:
                 raise RuntimeError(f"Failed to move {vtk_file}: {e}")
     else:
         raise RuntimeError(f"Failed to list .vtk files: {vtk_files.stderr}")
     
-    # Step 3: Remove all `.h5m` files
+    # Step 4: List all `.h5m` files in the current directory
     h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
     if h5m_files.returncode == 0:
         h5m_files_list = h5m_files.stdout.splitlines()
         if not h5m_files_list:
-            raise RuntimeError("No .vtk files found.")
+            print("No .h5m files found.")
             return
+        # Step 5: Move each `.h5m` file to the appropriate directory
         for h5m_file in h5m_files_list:
             try:
-                os.remove(h5m_file)
-                print(f"Deleted {h5m_file}")
+                if "gauss" in h5m_file:
+                    shutil.move(h5m_file, os.path.join(params.h5m_gauss_dir, h5m_file))
+                    print(f"Moved {h5m_file} to {params.h5m_gauss_dir}")
+                else:
+                    shutil.move(h5m_file, os.path.join(params.h5m_dir, h5m_file))
+                    print(f"Moved {h5m_file} to {params.h5m_dir}")
             except Exception as e:
-                raise RuntimeError(f"Failed to delete {h5m_file}: {e}")
+                raise RuntimeError(f"Failed to move {h5m_file}: {e}")
     else:
         raise RuntimeError(f"Failed to list .h5m files: {h5m_files.stderr}")
-    h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
-
 
 def quick_visualization(params):
+    import pyvista as pv
     pv.set_plot_theme("document")
 
     from pyvirtualdisplay import Display

@@ -44,6 +44,7 @@ def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz)
             [sig_xy[i], sig_yy[i], sig_yz[i]],
             [sig_xz[i], sig_yz[i], sig_zz[i]]
         ])
+        
 
         # Check for invalid values
         if not np.isfinite(stress_tensor).all():

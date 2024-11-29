@@ -7,6 +7,7 @@ from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny, roo
 import gmsh
 from enum import Enum
 from pathlib import Path
+import numpy as np
 
 # one giant glob of parameters
 class AttrDict(dict):
@@ -729,6 +730,9 @@ class Point(BaseModel):
     y: float
     z: float
     
+    def array(self):
+        return np.array([self.x, self.y, self.z])
+    
     def flat(self):
         return [str(self.x), str(self.y), str(self.z)]
     
@@ -739,6 +743,11 @@ class Point(BaseModel):
         return params.data_dir / f"{params.mesh_name_appended}_{self.string()}_to_time.csv"
     
     def graph_dir(self, params):
+        dir = params.data_dir / self.string()
+        dir.mkdir(parents=True,exist_ok=True)
+        return dir
+    
+    def point_dir(self, params):
         dir = params.data_dir / self.string()
         dir.mkdir(parents=True,exist_ok=True)
         return dir

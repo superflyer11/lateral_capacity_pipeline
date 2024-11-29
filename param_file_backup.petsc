@@ -25,7 +25,8 @@
 -ts_exact_final_time matchstep
 -ts_max_snes_failures 0
 -ts_error_if_step_fails false
--ts_adapt_type none
+-ts_adapt_type TSMoFEMAdapt
+-ts_mofem_adapt_desired_it 20
 -ts_adapt_dt_min 0.001
 -ts_adapt_dt_max 0.002
 

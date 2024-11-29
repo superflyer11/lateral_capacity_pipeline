@@ -99,13 +99,13 @@ def add_physical_groups(params, geo: cm.TestTagManager) -> List[cm.PhysicalGroup
             dim=2, tags=[
                 *geo.test_surfaces.min_x_surfaces
                 ], name="FIX_X_1",
-            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0.1,disp_uy=None,disp_uz=None)
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=-0.1,disp_uy=None,disp_uz=None)
         ))  
         physical_groups.append(cm.PhysicalGroup(
             dim=2, tags=[
                 *geo.test_surfaces.min_y_surfaces
                 ], name="FIX_Y_1",
-            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=0.1,disp_uz=None)
+            group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=-0.1,disp_uz=None)
         ))  
         if getattr(params.prescribed_disp, 'disp_ux', None):
             physical_groups.append(cm.PhysicalGroup(

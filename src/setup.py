@@ -61,6 +61,17 @@ def initialize_paths(params):
 
     params.vtk_dir = params.data_dir / f"vtks"
     params.vtk_dir.mkdir(parents=True, exist_ok=True)
+    
+    params.vtk_gauss_dir = params.data_dir / f"vtks_gauss"
+    params.vtk_gauss_dir.mkdir(parents=True, exist_ok=True)
+    
+    params.h5m_dir = params.data_dir / f"h5ms"
+    params.h5m_dir.mkdir(parents=True, exist_ok=True)
+    
+    params.h5m_gauss_dir = params.data_dir / f"h5ms_gauss"
+    params.h5m_gauss_dir.mkdir(parents=True, exist_ok=True)
+    
+    
     params.graph_dir = params.data_dir / f"graphs"
     params.graph_dir.mkdir(parents=True, exist_ok=True)
     

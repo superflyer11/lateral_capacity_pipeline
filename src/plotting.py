@@ -350,6 +350,8 @@ def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_throu
         return save_as
     elif not show:
         plt.close()
+        
+        
 def plot_sig_eq_vs_e_zz(sig_eq, e_zz, save_as: str =None):
     return plot_2d_with_quiver(e_zz, sig_eq, 'Axial Strain $\epsilon_{zz}$', 'Equivalent Stress $\sigma_{eq}$', '$\sigma_{eq}$ - Axial Strain',save_as=save_as)
 
@@ -361,4 +363,149 @@ def plot_x_ys(x_array: list, y_arrays, labels: list, colors: list | None = None,
         data.append((x_array, y_arrays[i], labels[i], colors[i] if colors else None, None))
     return create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero,annotate_last_datapoint)
 
+def init_axes_3d():
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    return fig, ax
 
+def plot_cone_and_points(ax, radius, start_height=-50, end_height=100):
+    # Step 1: Define the direction vector of the space diagonal
+    diagonal_direction = np.array([1, 1, 1]) / np.linalg.norm([1, 1, 1])
+
+    # Step 2: Generate the cone along the direction of the space diagonal
+    height = np.linspace(0, end_height - start_height, 50)
+    angle = np.linspace(0, 2 * np.pi, 100)
+    Height, Angle = np.meshgrid(height, angle)
+
+    # Define two orthogonal vectors that are perpendicular to the diagonal direction
+    orthogonal_vector_1 = np.array([1.0, -1.0, 0.0])
+    orthogonal_vector_1 /= np.linalg.norm(orthogonal_vector_1)
+    orthogonal_vector_2 = np.cross(diagonal_direction, orthogonal_vector_1)
+
+    # Compute the radius of the cone at each height (linearly increases from zero)
+    cone_radius = radius * (Height / (end_height - start_height))
+    # print(cone_radius[-1])
+    # Compute the coordinates of the cone
+    X = (cone_radius * np.cos(Angle) * orthogonal_vector_1[0] +
+         cone_radius * np.sin(Angle) * orthogonal_vector_2[0] +
+         (Height + start_height) * diagonal_direction[0])
+    Y = (cone_radius * np.cos(Angle) * orthogonal_vector_1[1] +
+         cone_radius * np.sin(Angle) * orthogonal_vector_2[1] +
+         (Height + start_height) * diagonal_direction[1])
+    Z = (cone_radius * np.cos(Angle) * orthogonal_vector_1[2] +
+         cone_radius * np.sin(Angle) * orthogonal_vector_2[2] +
+         (Height + start_height) * diagonal_direction[2])
+
+    # Step 3: Plot the cone
+    ax.plot_surface(X, Y, Z, alpha=0.5, color='m')
+
+    # Step 4: Set the base of the cone for the circle at the end height
+    base_point = end_height * diagonal_direction
+
+    # Step 5: Plot a circle around the base point to indicate it lies on the cone plane
+    circle_angle = np.linspace(0, 2 * np.pi, 100)
+    cone_radius_at_base = radius
+    circle_x = (cone_radius_at_base * np.cos(circle_angle) * orthogonal_vector_1[0] +
+                cone_radius_at_base * np.sin(circle_angle) * orthogonal_vector_2[0] +
+                base_point[0])
+    circle_y = (cone_radius_at_base * np.cos(circle_angle) * orthogonal_vector_1[1] +
+                cone_radius_at_base * np.sin(circle_angle) * orthogonal_vector_2[1] +
+                base_point[1])
+    circle_z = (cone_radius_at_base * np.cos(circle_angle) * orthogonal_vector_1[2] +
+                cone_radius_at_base * np.sin(circle_angle) * orthogonal_vector_2[2] +
+                base_point[2])
+    ax.plot(circle_x, circle_y, circle_z, color='b')
+    # ax.scatter(*base_point, color='b', s=100)
+
+    # # Step 6: Define a plane that cuts through the cone at the base height
+    # plane_normal = diagonal_direction
+    # plane_point = base_point  # Plane passes through the base point
+
+    # # Step 7: Find intersection points of the plane with the cone
+    # cone_points = np.vstack((X.flatten(), Y.flatten(), Z.flatten())).T
+    # plane_distances = np.dot(cone_points - plane_point, plane_normal)
+    # intersection_indices = np.where(np.abs(plane_distances) < 0.05)[0]
+    # intersection_points = cone_points[intersection_indices]
+
+    # # Step 8: Pick three random points from the intersection points
+    # if intersection_points.shape[0] >= 3:
+    #     random_indices = np.random.choice(intersection_points.shape[0], 3, replace=False)
+    #     random_points = intersection_points[random_indices]
+    #     # Plot the three random points and lines connecting them to the base point
+    #     for i in range(3):
+    #         ax.scatter(random_points[i, 0], random_points[i, 1], random_points[i, 2], color='g', s=50)
+    #         ax.plot([base_point[0], random_points[i, 0]],
+    #                 [base_point[1], random_points[i, 1]],
+    #                 [base_point[2], random_points[i, 2]], color='k', linestyle='--')
+    #         distance = np.linalg.norm(random_points[i] - base_point)
+    #         print(f"Distance from base point to point {i+1}: {distance:.2f}")
+    # else:
+    #     print("Not enough intersection points found to select three random points.")
+
+
+# Plot stress history with classification based on tau_oct
+def plot_stress_history(ax, sig_1, sig_2, sig_3, tau_oct = None, tau_oct_limit = None, save_as: str =None):
+    if tau_oct and tau_oct_limit:
+        mask_elastic = tau_oct < tau_oct_limit
+        mask_plastic = tau_oct >= tau_oct_limit
+        if np.any(mask_elastic):
+            ax.plot(sig_1[mask_elastic], sig_2[mask_elastic], sig_3[mask_elastic], color='b', label='Elastic', linewidth=2)
+        if np.any(mask_plastic):
+            ax.plot(sig_1[mask_plastic], sig_2[mask_plastic], sig_3[mask_plastic], color='orange', label='Plastic', linewidth=2)
+    else:
+        ax.plot(sig_1, sig_2, sig_3, color='orange', linewidth=2)
+    # vol_stress_value = (sig_1 + sig_2 + sig_3) / 3
+    # diagonal_direction = np.array([1, 1, 1]) / np.linalg.norm([1, 1, 1])
+    # vol_stress_x = vol_stress_value * diagonal_direction[0]
+    # vol_stress_y = vol_stress_value * diagonal_direction[1]
+    # vol_stress_z = vol_stress_value * diagonal_direction[2]
+    # ax.plot(vol_stress_x, vol_stress_y, vol_stress_z, color='r', linestyle='--', label='Volumetric Stress')
+    # ax.plot([vol_stress_x[-1], sig_1[-1]], [vol_stress_y[-1], sig_2[-1]], [vol_stress_z[-1], sig_3[-1]], color='g', linestyle='--', label='Deviatoric Stress')
+
+# Plot metadata like labels and planes
+def plot_meta(ax, elev, azim, roll):
+    ax.set_xlabel(r'$\sigma_1$')
+    ax.set_ylabel(r'$\sigma_2$')
+    ax.set_zlabel(r'$\sigma_3$')
+    ax.set_title('3D Plot of Principal Stresses')
+
+    # Plot planes and add arrowheads with labels
+    ylim = ax.get_ylim()
+    xlim = ax.get_xlim()
+    zlim = ax.get_zlim()
+    text_fontsize = 10
+    # y-plane
+    ax.plot([0, 0], ylim, [0, 0], color='k', linestyle='--', alpha=0.5)
+    ax.text(0, ylim[1] + text_fontsize * 2.5, 0, r'$\sigma_2$', color='k', fontsize=text_fontsize, verticalalignment='center_baseline', horizontalalignment='center')
+
+    # x-plane
+    ax.plot(xlim, [0, 0], [0, 0], color='k', linestyle='--', alpha=0.5)
+    ax.text(xlim[1] + text_fontsize * 2.5, 0, 0, r'$\sigma_1$', color='k', fontsize=text_fontsize, verticalalignment='center_baseline', horizontalalignment='center')
+
+    # z-plane
+    ax.plot([0, 0], [0, 0], zlim, color='k', linestyle='--', alpha=0.5)
+    ax.text(0, 0, zlim[1] + text_fontsize * 2.5, r'$\sigma_3$', color='k', fontsize=text_fontsize, verticalalignment='center_baseline', horizontalalignment='center')
+
+    # limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+    # ax.set_box_aspect(np.ptp(limits, axis=1))
+    ax.view_init(elev=elev, azim=azim, roll=roll)
+    # ax.legend()
+
+    # ax.set_axis_off()
+    # plt.tight_layout()
+
+def plot_stress_field(sig_1, sig_2, sig_3, elev, azim, roll, save_as: str =None, show = False):
+    fig, ax = init_axes_3d()
+    # plot_cone_and_points(ax, radius=cone_radius[-1], start_height = cone_tip_p, end_height=max_p)
+    plot_stress_history(ax, sig_1, sig_2, sig_3)
+    plot_meta(ax, elev, azim, roll)
+    
+    ax.grid(True)
+    if save_as:
+        plt.savefig(save_as)
+        if not show:
+            plt.close()
+        return save_as
+    elif not show:
+        plt.close()
+    
