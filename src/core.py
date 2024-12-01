@@ -153,8 +153,8 @@ def mofem_compute(params):
         # f"-options_file {params.options_file} "
     ]
     
-    start_time = time.time()
-    usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
+    # start_time = time.time()
+    # usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
     
     # Log the command
     with open(params.log_file, 'w') as log_file:
@@ -187,7 +187,7 @@ def mofem_compute(params):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=4096  # Use a larger buffer for efficiency
+                bufsize=256  # Use a larger buffer for efficiency
             )
             
             # Buffer for batch writing to log file
@@ -208,9 +208,10 @@ def mofem_compute(params):
                     log_buffer.clear()
 
                 # Check for specific error message
-                if "Mfront integration failed" in line:
-                    print("Error detected: Mfront integration failed")
-                    process.kill()
+                if "Mfront integration failed" in line or "Mfront integration succeeded but results are unreliable" in line:
+                    print("Error detected: Mfront integration failed or is unreliable")
+                    process.terminate()
+                    process.wait()
                     log_file.writelines(log_buffer)
                     log_file.flush()
                     log_buffer.clear()
@@ -227,27 +228,20 @@ def mofem_compute(params):
         print("Process interrupted by user")
         process.kill()
         process.wait()
-    finally:
-        end_time = time.time()
-        usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
+    # finally:
+    #     end_time = time.time()
+    #     usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
         
-        user_cpu_time = usage_end.ru_utime - usage_start.ru_utime
-        system_cpu_time = usage_end.ru_stime - usage_start.ru_stime
-        params.compute_cpu_time = user_cpu_time + system_cpu_time
-        params.compute_wall_time = end_time - start_time
+    #     user_cpu_time = usage_end.ru_utime - usage_start.ru_utime
+    #     system_cpu_time = usage_end.ru_stime - usage_start.ru_stime
+    #     params.compute_cpu_time = user_cpu_time + system_cpu_time
+    #     params.compute_wall_time = end_time - start_time
         
-        with open(params.log_file, 'a') as log_file:
-            log_file.write(f"Total CPU time: {params.compute_cpu_time:.6f} seconds\n")
-            log_file.write(f"Wall-clock time: {params.compute_wall_time:.6f} seconds\n")
-            log_file.flush()
+    #     with open(params.log_file, 'a') as log_file:
+    #         log_file.write(f"Total CPU time: {params.compute_cpu_time:.6f} seconds\n")
+    #         log_file.write(f"Wall-clock time: {params.compute_wall_time:.6f} seconds\n")
+    #         log_file.flush()
 
-    subprocess.run(f"grep 'Total force:' {params.log_file} > {params.total_force_log_file}", shell=True)
-    subprocess.run(
-        f"grep -A 2 'FIX_X_1' {params.log_file} | awk '/Force/' > {params.FIX_X_1_force_log_file}",
-        shell=True
-    )
-    # subprocess.run(f"grep 'Force:' {params.log_file} > {params.force_log_file}", shell=True)
-    subprocess.run(f"grep 'nb global dofs' {params.log_file} > {params.DOFs_log_file}", shell=True)
     
     
 

@@ -303,7 +303,7 @@ class DPNAProps(MaterialProperty):
     def mi_param_4(self) -> float:
         return self.poisson_ratio
 
-class DruckerPragerHYPERProperties(MaterialProperty):
+class DPHYPERProps(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
     phi: float
