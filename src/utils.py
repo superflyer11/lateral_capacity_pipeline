@@ -1,7 +1,20 @@
+import sys
 import time
 from typing import Callable, Any
 from functools import wraps
 
+def print_progress(iteration, total, decimals=1, bar_length=50):
+    str_format = "{0:." + str(decimals) + "f}"
+    percents = str_format.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+
+    sys.stdout.write('\r |%s| %s%s (%s of %s)' %
+                     (bar, percents, '%', str(iteration), str(total)))
+    sys.stdout.flush()
+   
+def is_not_h5m(file):
+    return not file.endswith('h5m')
 
 # @track_time("RUNNING COMMAND...")
 def run_command(index, command, log_file):
@@ -93,7 +106,7 @@ def track_time(message: str) -> Callable:
             result = func(*args, **kwargs)
             elapsed_wall_time = time.time() - start_wall_time
             elapsed_cpu_time = time.process_time() - start_cpu_time
-            print(f"Done, taken Wall Time: {elapsed_wall_time:.2f} seconds, CPU Time: {elapsed_cpu_time:.2f} seconds")
+            print(f"\nDone, taken Wall Time: {elapsed_wall_time:.2f} seconds, CPU Time: {elapsed_cpu_time:.2f} seconds")
             return result
         return wrapper
     return decorator

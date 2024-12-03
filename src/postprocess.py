@@ -21,10 +21,8 @@ import utils as ut
 import calculations as calc
 import plotting
 
-
-
-@ut.track_time("EXTRACTING results")
-def extract(params):
+@ut.track_time("EXTRACTING RESULTS FROM LOG")
+def extract_log(params):
     # Extract the total force, force, and DOFs from the log file
     subprocess.run(f"grep 'Total force:' {params.log_file} > {params.total_force_log_file}", shell=True)
     subprocess.run(
@@ -33,8 +31,10 @@ def extract(params):
     )
     # subprocess.run(f"grep 'Force:' {params.log_file} > {params.force_log_file}", shell=True)
     subprocess.run(f"grep 'nb global dofs' {params.log_file} > {params.DOFs_log_file}", shell=True)
-    
-    
+    subprocess.run(f"grep 'Nonlinear solve' {params.log_file} > {params.snes_log_file}", shell=True)
+
+@ut.track_time("EXTRACTING RESULTS FROM .vtk FILES")
+def extract(params):
     # Example fields and components to extract
     fields = ["STRAIN", "STRESS", "DISPLACEMENT"]
     components = {
@@ -55,11 +55,9 @@ def extract(params):
 
     # Iterate through the VTK files
     for i, vtk_file_path in enumerate(vtk_files_list):
-        print(f"Processing VTK file: {vtk_file_path}")
-
         vtk_file = params.vtk_dir / f'out_mi_{i}.vtk'
         if not os.path.exists(vtk_file):
-            print(f"File {vtk_file} does not exist.")
+            raise FileNotFoundError(f"File {vtk_file} does not exist.")
             continue
 
         # Read the VTK file
@@ -69,10 +67,18 @@ def extract(params):
         for point in params.points_of_interest:
             point_coords = point.array()
 
+            tolerance = 1e-6
+            differences = mesh.points - point_coords  # Element-wise subtraction
+            norms = np.linalg.norm(differences, axis=1)  # Compute the norm (magnitude) for each point
+
+            # Find the indices where the norm is within the tolerance
+            all_point_ids = np.where(norms <= tolerance)[0]
+            # print(all_point_ids)
+
             # Find all point IDs that match the coordinates
-            all_point_ids = np.where(np.all(mesh.points == point_coords, axis=1))[0]
+            # all_point_ids = np.where(np.all(mesh.points == point_coords, axis=1))[0]
             if len(all_point_ids) == 0:
-                print(f"No points found at coordinates {point_coords} in file {vtk_file}")
+                raise ValueError(f"No points found at coordinates {point_coords} in file {vtk_file}")
                 continue
 
             # Initialize DataFrames for each point ID if not already done
@@ -92,7 +98,6 @@ def extract(params):
                 data['x'] = point.x
                 data['y'] = point.y
                 data['z'] = point.z
-
                 for field_name in fields:
                     point_data = mesh.point_data[field_name][pid]
                     for comp in range(components[field_name]):
@@ -100,16 +105,18 @@ def extract(params):
 
                 df = pd.DataFrame(data)
                 point_dataframes[pid] = pd.concat([point_dataframes[pid], df], ignore_index=True)
-
+        ut.print_progress(i + 1, len(vtk_files_list), decimals=1, bar_length=50)
+    print('\n')
     # Save the extracted data to a CSV file
-    for pid, df in point_dataframes.items():
+    for idx, (pid, df) in enumerate(point_dataframes.items()):
         output_path = cm.Point(x=df["x"].iloc[0], y=df["y"].iloc[0], z=df["z"].iloc[0]).point_dir(params) / f"point_data_{pid}.csv"
         point_dataframes[pid].to_csv(output_path, index=False)
-        print(f"Saved data for point ID {pid} to {output_path}")
+        ut.print_progress(idx + 1, len(point_dataframes), decimals=1, bar_length=50)
 
-@ut.track_time("DOING NECESSARY ADDITIONAL CAUCLATIONS")
+@ut.track_time("DOING NECESSARY ADDITIONAL CALCULATIONS")
 def calculate(params):
-    for point in params.points_of_interest:
+    for i, point in enumerate(params.points_of_interest):
+        ut.print_progress(i + 1, len(params.points_of_interest), decimals=1, bar_length=50)
         csv_files = [f for f in os.listdir(point.point_dir(params)) if f.startswith("point_data_") and f.endswith(".csv")]
         
         for csv_file in csv_files:
@@ -211,7 +218,7 @@ def plot_stress_3D(params):
                 var calculator = Desmos.Calculator3D(elt);"""
             if params.soil_model == cm.PropertyTypeEnum.le:
                 pass
-            elif params.soil_model == cm.PropertyTypeEnum.vM:
+            elif params.soil_model == cm.PropertyTypeEnum.vM or params.soil_model == cm.PropertyTypeEnum.vMDefault:
                 sig_y = 10
                 H = 0
                 interacative_html_js += f"""
@@ -290,20 +297,20 @@ def plot_stress_3D(params):
             Html_file.write(interacative_html_js)
             Html_file.close()
 
-@ut.track_time("PLOTTING")
+@ut.track_time("PLOTTING ALL POINTS")
 def plot(params):
     data_force=pd.read_csv(params.FIX_X_1_force_log_file,sep='\s+',header=None)
     pile_tip_lateral_load = - data_force[4].values * 2 * (10 ** 6) / 1000
     
-    for point in params.points_of_interest:
+    for i, point in enumerate(params.points_of_interest):
+        ut.print_progress(i + 1, len(params.points_of_interest), decimals=1, bar_length=50)
         csv_files = [f for f in os.listdir(point.point_dir(params)) if f.startswith("point_data_") and f.endswith(".csv")]
         for csv_file in csv_files:
             pid = int(csv_file.split('_')[2].split('.')[0])
             df = pd.read_csv(point.point_dir(params) / csv_file)
-
-            # df_ground_level_passive = pd.read_csv("/mofem_install/jupyter/thomas/mfront_example_test/simulations/pile_day_104_sim_1_20241129_010700_vM/-1.0_0.0_0.0/point_data_71015.csv")
             disp_x = - np.array(df['DISPLACEMENT_0']) * 1000
-            
+            if len(pile_tip_lateral_load) == len(disp_x) + 1:
+                pile_tip_lateral_load = pile_tip_lateral_load[:-1]
             # Create a DataFrame from the arrays
             df_final = pd.DataFrame({
                 'disp_x': disp_x,

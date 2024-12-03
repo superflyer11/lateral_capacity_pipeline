@@ -141,8 +141,8 @@ def mofem_compute(params):
         f"-file_name {params.part_file} "
         f"-sdf_file {params.sdf_file} "
         f"-order {params.order} "
-        f"-contact_order 0 "
-        f"-sigma_order 0 "
+        f"-contact_order {params.order} "
+        f"-sigma_order {params.order} "
         f"{'-base demkowicz ' if (getattr(params, 'base', False) == 'hex') else ''} "
         f"-ts_dt {params.time_step} "
         f"-ts_max_time {params.final_time} "
@@ -202,7 +202,7 @@ def mofem_compute(params):
                 log_buffer.append(line)
 
                 # Flush to file every 50 lines
-                if len(log_buffer) >= 50:
+                if len(log_buffer) >= 1:
                     log_file.writelines(log_buffer)
                     log_file.flush()
                     log_buffer.clear()
@@ -210,6 +210,7 @@ def mofem_compute(params):
                 # Check for specific error message
                 if "Mfront integration failed" in line or "Mfront integration succeeded but results are unreliable" in line:
                     print("Error detected: Mfront integration failed or is unreliable")
+                    sys.exit()
                     process.terminate()
                     process.wait()
                     log_file.writelines(log_buffer)
@@ -249,56 +250,51 @@ def mofem_compute(params):
 def export_to_vtk(params):
     os.chdir(params.data_dir)
     # Step 1: List all `out_mi*.h5m` files and convert them to `.vtk` using `convert.py`
-    out_to_vtk = subprocess.run("ls -c1 out_mi*.h5m", shell=True, text=True, capture_output=True)
-    if out_to_vtk.returncode == 0:
-        convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 out_mi*.h5m", shell=True)
-        if convert_result.returncode == 0:
-            print("Conversion to VTK successful.")
-        else:
-            print("Conversion to VTK failed.")
-            return
-        
-    # Step 2: List all `.vtk` files in the current directory
-    vtk_files = subprocess.run("ls -c1 *.vtk", shell=True, text=True, capture_output=True)
-    if vtk_files.returncode == 0:
-        vtk_files_list = vtk_files.stdout.splitlines()
-        if not vtk_files_list:
-            print("No .vtk files found.")
-            return
-        # Step 3: Move each `.vtk` file to the appropriate directory
-        for vtk_file in vtk_files_list:
-            try:
-                if "gauss" in vtk_file:
-                    shutil.move(vtk_file, os.path.join(params.vtk_gauss_dir, vtk_file))
-                    print(f"Moved {vtk_file} to {params.vtk_gauss_dir}")
-                else:
-                    shutil.move(vtk_file, os.path.join(params.vtk_dir, vtk_file))
-                    print(f"Moved {vtk_file} to {params.vtk_dir}")
-            except Exception as e:
-                raise RuntimeError(f"Failed to move {vtk_file}: {e}")
-    else:
-        raise RuntimeError(f"Failed to list .vtk files: {vtk_files.stderr}")
+    h5m_files = subprocess.run("ls -c1 out_mi*.h5m", shell=True, text=True, capture_output=True)
+    h5m_files_list = h5m_files.stdout.splitlines()
     
-    # Step 4: List all `.h5m` files in the current directory
-    h5m_files = subprocess.run("ls -c1 *.h5m", shell=True, text=True, capture_output=True)
-    if h5m_files.returncode == 0:
-        h5m_files_list = h5m_files.stdout.splitlines()
-        if not h5m_files_list:
-            print("No .h5m files found.")
-            return
-        # Step 5: Move each `.h5m` file to the appropriate directory
-        for h5m_file in h5m_files_list:
-            try:
-                if "gauss" in h5m_file:
-                    shutil.move(h5m_file, os.path.join(params.h5m_gauss_dir, h5m_file))
-                    print(f"Moved {h5m_file} to {params.h5m_gauss_dir}")
-                else:
-                    shutil.move(h5m_file, os.path.join(params.h5m_dir, h5m_file))
-                    print(f"Moved {h5m_file} to {params.h5m_dir}")
-            except Exception as e:
-                raise RuntimeError(f"Failed to move {h5m_file}: {e}")
-    else:
-        raise RuntimeError(f"Failed to list .h5m files: {h5m_files.stderr}")
+    print(f"Moving h5m files from working directory")
+    
+    for i, h5m_file in enumerate(h5m_files_list):
+        try:
+            if "gauss" in h5m_file:
+                shutil.move(h5m_file, params.h5m_gauss_dir / h5m_file)
+            else:
+                shutil.move(h5m_file, params.h5m_dir / h5m_file)
+            ut.print_progress(i + 1, len(h5m_files_list), decimals=1, bar_length=50)
+        except Exception as e:
+            raise RuntimeError(f"Failed to move {h5m_file}: {e}")
+        
+        
+    print(f"Converting h5m files to vtk and move to vtk dir")
+    
+    if params.convert_gauss == 1:
+        convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 {params.h5m_gauss_dir}/out_mi*.h5m", shell=True)
+        if convert_result.returncode != 0:
+            print("Conversion to VTK failed.")
+            sys.exit()
+        print("Conversion to VTK successful.")
+        vtk_files = subprocess.run(f"ls -c1 {params.h5m_gauss_dir}/*.vtk", shell=True, text=True,capture_output=True)
+        vtk_files_list = vtk_files.stdout.splitlines()
+        print(f"Moving vtk files from h5m dir to vtk dir")
+        
+        for i, vtk_file in enumerate(vtk_files_list):
+            shutil.move(vtk_file, params.vtk_gauss_dir / vtk_file.split("/")[-1])
+            ut.print_progress(i + 1, len(vtk_files_list), decimals=1, bar_length=50)
+            
+            
+    
+    convert_result = subprocess.run(f"{params.h5m_to_vtk_converter} -np 4 {params.h5m_dir}/out_mi*.h5m", shell=True)
+    if convert_result.returncode != 0:
+        print("Conversion to VTK failed.")
+        sys.exit()
+    print("Conversion to VTK successful.")
+    vtk_files = subprocess.run(f"ls -c1 {params.h5m_dir}/*.vtk", shell=True, text=True,capture_output=True)
+    vtk_files_list = vtk_files.stdout.splitlines()
+    print(f"Moving vtk files from h5m dir to vtk dir")
+    for i, vtk_file in enumerate(vtk_files_list):
+        shutil.move(vtk_file, params.vtk_dir / vtk_file.split("/")[-1])
+        ut.print_progress(i + 1, len(vtk_files_list), decimals=1, bar_length=50)
 
 def quick_visualization(params):
     import pyvista as pv

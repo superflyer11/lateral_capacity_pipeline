@@ -89,6 +89,7 @@ def initialize_paths(params):
     params.FIX_X_1_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_FIX_X_1_force.log"
     params.DOFs_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_DOFs.log"
     params.ux_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_ux.log"
+    params.snes_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_snes.log"
     
     
     if not os.path.exists(params.log_file):

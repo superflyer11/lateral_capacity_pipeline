@@ -182,8 +182,8 @@ class ForceBoundaryCondition(BoundaryCondition):
 # value should be the behvaiour name in mfront
 class PropertyTypeEnum(str, Enum):
     le = "LinearElasticity" #good performance
-    saint_venant_kirchhoff = "SaintVenantKirchhoff" #not using this
-    vM = "VMSimo" #tested to be have the same results as mfront gallery implementation
+    vMDefault = "vMDefault" 
+    vM = "vM" #tested to be have the same results as mfront gallery implementation
     dp = "DruckerPragerSimple" 
     dpNA = "DruckerPragerNonAssociated" 
     dpHYPER = "DruckerPragerHyperboloidal"
