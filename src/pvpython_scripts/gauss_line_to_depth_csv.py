@@ -26,7 +26,7 @@ def to_depth(params):
         plotOverLine1 = PlotOverLine(registrationName='PlotOverLine2', Input=out_mi_0vtk)
         plotOverLine1.Point1 = [params.pt1_x, params.pt1_y, params.pt1_z]
         plotOverLine1.Point2 = [params.pt2_x, params.pt2_y, params.pt2_z]
-        SaveData(params.csv_filepath, proxy=plotOverLine1, PointDataArrays=['Strain', 'Stresss', 'U' ])
+        SaveData(params.csv_filepath, proxy=plotOverLine1, PointDataArrays=['U'], Precision=12)
         
 params = AttrDict()
 params.vtk_dir = sys.argv[1] 

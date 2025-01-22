@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Union, Optional
 from typing_extensions import Self
 from pydantic import BaseModel, model_validator, ConfigDict, SerializeAsAny, root_validator
 import gmsh
-from enum import Enum
 from pathlib import Path
 import numpy as np
 
@@ -18,14 +17,8 @@ class AttrDict(dict):
     def __setattr__(self, key, value):
         self[key] = value
 
-class BulkAnalysisProps(BaseModel):
-    data_dir: Path
-    mesh_name_appended: str
-    total_force_log_file: Path
-    FIX_X_1_force_log_file: Path
-    DOFs_log_file: Path
-    ux_log_file: Path
-    full_fe_log: Path
+
+        
 
 class SurfaceTags(BaseModel):
     min_x_surfaces: list = []
@@ -181,13 +174,31 @@ class ForceBoundaryCondition(BoundaryCondition):
 
 # value should be the behvaiour name in mfront
 class PropertyTypeEnum(str, Enum):
-    le = "LinearElasticity" #good performance
-    vMDefault = "vMDefault" 
-    vM = "vM" #tested to be have the same results as mfront gallery implementation
-    dp = "DruckerPragerSimple" 
-    dpNA = "DruckerPragerNonAssociated" 
-    dpHYPER = "DruckerPragerHyperboloidal"
-    mcc = "ModCamClay_semiExpl" # none of them is working so far
+    le = "LinearElasticity"
+    le_adolc = "le_adolc"
+    vM_Default_mfront = "vMDefault" 
+    vM_Implicit_mfront = "vM" #tested to be have the similar convergence as mfront gallery implementation
+    vM_adolc = "vM_adolc" 
+    Hm_adolc = "Hm_adolc" 
+    DP = "DruckerPragerNonAssociated" 
+    DP_HYPER = "DruckerPragerHyperboloidal"
+    MCC = "ModCamClay_semiExpl" # none of them is working so far
+
+class BulkAnalysisProps(BaseModel):
+    data_dir: Path
+    mesh_name_appended: str
+    total_force_log_file: Path
+    PRESCRIBED_BC_force_log_file: Path
+    TOTAL_STRAIN_ENERGY_log_file: Path
+    DOFs_log_file: Path
+    ux_log_file: Path
+    full_fe_log: Path
+    custom_mesh_filepath: Path
+    FEA_completed: bool
+    base: str
+    soil_model: PropertyTypeEnum
+    days_since_epoch: int
+    sim_otd: int
 
 class MaterialProperty(BaseModel):
     
@@ -250,33 +261,6 @@ class VonMisesProperties(MaterialProperty):
 
 
 class DruckerPragerProperties(MaterialProperty):
-    youngs_modulus: float
-    poisson_ratio: float
-    phi: float
-    c: float
-    v: float
-    
-    @property
-    def mi_param_0(self) -> float:
-        return self.phi
-
-    @property
-    def mi_param_1(self) -> float:
-        return self.c
-    
-    @property
-    def mi_param_2(self) -> float:
-        return self.youngs_modulus
-
-    @property
-    def mi_param_3(self) -> float:
-        return self.poisson_ratio
-    
-    # @property
-    # def mi_param_4(self) -> float:
-    #     return self.v
-
-class DPNAProps(MaterialProperty):
     youngs_modulus: float
     poisson_ratio: float
     phi: float

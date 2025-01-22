@@ -106,7 +106,7 @@ def animate(params):
         layout1.SetSize(2252, 867)
 
         # current camera placement for renderView1
-        renderView1.InteractionMode = '2D'
+        renderView1.InteractionMode = '3D'
         renderView1.CameraPosition = [0.0, 0.0, 67.0]
         renderView1.CameraParallelScale = 14.142135623730951
         # renderView1.Update()

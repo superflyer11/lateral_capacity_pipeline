@@ -1,7 +1,9 @@
 import sys
+import os
 import time
 from typing import Callable, Any
 from functools import wraps
+import zipfile
 
 def print_progress(iteration, total, decimals=1, bar_length=50):
     str_format = "{0:." + str(decimals) + "f}"
@@ -111,3 +113,9 @@ def track_time(message: str) -> Callable:
         return wrapper
     return decorator
 
+def zip_vtks(files, zip_path):
+    with zipfile.ZipFile(zip_path, 'w') as myzip:
+        for file in files:
+            myzip.write(file, os.path.basename(file), compress_type = zipfile.ZIP_DEFLATED)
+        # myzip.write(zip_path)
+    myzip.close()

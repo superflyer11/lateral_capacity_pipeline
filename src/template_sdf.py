@@ -9,13 +9,13 @@ yc = R
 zc = 0
 
 def sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.sDF(R, xc, yc - d * t, zc, x, y, z)
+    return NoIndenter().sDF(x, y, z)
 
 def grad_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.gradSdf(xc, yc - d * t, zc, x, y, z)
+    return NoIndenter().gradSdf(x, y, z)
 
 def hess_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.hessSdf(xc, yc - d * t, zc, x, y, z)
+    return NoIndenter().hessSdf(x, y, z)
 
 class Sphere:
 	def sDF(r, xc, yc, zc, x, y, z):
@@ -58,5 +58,25 @@ class Sphere:
 		Hzy = Hzy.reshape((-1,1))
 		Hzz = Hzz.reshape((-1,1))
 		hess_array = np.hstack([Hxx, Hxy, Hzx, Hyy, Hzy, Hzz])
-
 		return hess_array
+
+class NoIndenter:
+	def sDF(self, x, y, z):
+		return np.ones_like(x)
+
+	def gradSdf(self, x, y, z):
+		zeros = np.zeros_like(x)
+		zeros = zeros.reshape((-1,1))
+
+		grad_array = np.hstack([zeros, zeros, zeros])
+		return grad_array
+
+	def hessSdf(self, x, y, z):
+		zeros = np.zeros_like(x)
+		zeros = zeros.reshape((-1,1))
+
+		hess_array = np.hstack([zeros, zeros, zeros, zeros, zeros, zeros])
+
+		# xx, yx, zx, yy, zy, zz
+		return hess_array
+ 

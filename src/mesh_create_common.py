@@ -474,8 +474,7 @@ def check_block_ids(params, physical_groups: List[cm.PhysicalGroup]) -> List[cm.
 
 @ut.track_time("GENERATING CONFIG FILES")
 def generate_config(params, physical_groups: List[cm.PhysicalGroup]):
-    if getattr(params, "time_history", False):
-        params.time_history.write(params.time_history_file)
+    
     print(physical_groups)
     blocks: list[cm.BC_CONFIG_BLOCK | cm.MFRONT_CONFIG_BLOCK] = []
     new_physical_groups: List[cm.PhysicalGroup] = []

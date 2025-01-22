@@ -86,23 +86,42 @@ def initialize_paths(params):
     params.config_file = params.data_dir / "bc.cfg"
     params.log_file = params.data_dir /  f"result_{params.mesh_name_appended}.log"
     params.total_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_total_force.log"
-    params.FIX_X_1_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_FIX_X_1_force.log"
+    params.PRESCRIBED_BC_force_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_{params.prescribed_BC_name}.log"
     params.DOFs_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_DOFs.log"
+    params.TOTAL_STRAIN_ENERGY_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_TOTAL_STRAIN_ENERGY.log"
     params.ux_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_ux.log"
     params.snes_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_snes.log"
-    
+    params.time_step_log_file = params.data_dir /  f"result_{params.mesh_name_appended}_time_step.log"
+    params.snes_csv = params.data_dir /  f"result_{params.mesh_name_appended}_snes.csv"
+    params.vtk_zip = params.data_dir /  f"result_{params.mesh_name_appended}_zip_vtks.zip"
+    params.vtk_zip_gauss = params.data_dir /  f"result_{params.mesh_name_appended}_zip_vtks_gauss.zip"
     
     if not os.path.exists(params.log_file):
         with open(params.log_file, 'w'): pass
 
     params.part_file = os.path.splitext(params.h5m_filepath)[0] + "_" + str(params.nproc) + "p.h5m"
-    params.time_history_file = params.data_dir / f"body_force_hist.txt"
+    params.time_history_file = params.data_dir / f"global_hist.txt"
+    params.body_time_history_file = params.data_dir / f"bodyforce_scale.txt"
+    params.force_time_history_file = params.data_dir / f"force_bc_scale_1.txt"
+    params.secondary_force_time_history_file = params.data_dir / f"force_bc_scale_2.txt"
+    params.displacement_time_history_file = params.data_dir / f"displacement_bc_scale.txt"
     
     params.strain_animation_temp_dir = Path( params.data_dir / "strain_animation_pngs")
     params.strain_animation_temp_dir.mkdir(parents=True, exist_ok=True)
     params.strain_animation_filepath_png =  params.strain_animation_temp_dir / f"{params.mesh_name_appended}.png"
     params.strain_animation_filepath_png_ffmpeg_regex =  params.strain_animation_temp_dir / f"{params.mesh_name_appended}.%04d.png"
     params.strain_animation_filepath_mp4 = params.data_dir /  f"{params.mesh_name_appended}.mp4"
+    
+    params.skipped_vtks_log_file = params.data_dir / "skipped_vtks.log"
+    params.skipped_vtks = []
+
+    if params.skipped_vtks_log_file.exists() and params.skipped_vtks_log_file.stat().st_size > 0:
+        with params.skipped_vtks_log_file.open("r") as f:
+            contents = f.read()
+            # Assuming the log file contains indices separated by spaces or newlines
+            params.skipped_vtks = [int(x) for x in contents.strip().split()]
+            print(f"Loaded skipped indices from log: {params.skipped_vtks}")
+
     
     return params
 

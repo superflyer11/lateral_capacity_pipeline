@@ -301,8 +301,9 @@ def plot_2d_with_animation(x, y, xlabel, ylabel, title, color='b', scale=1, line
 
     plt.show()
 
-def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero, annotate_last_datapoint):
+def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero, annotate_all_datapoints, annotate_last_datapoint, large_markers, vertical_axis="left", horizontal_axis="bottom", scale_up=1, x_log_scale=False, y_log_scale=False):
     linestyle = "-"
+    plt.tight_layout()
     fig, ax = plt.subplots()
     max_x, max_y = float('-inf'), float('-inf')
     min_x, min_y = float('inf'), float('inf')
@@ -315,16 +316,30 @@ def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_throu
                 y = y.to_numpy()
                 
             if cutoff:
-                mask_elastic = abs(y) < abs(cutoff)
-                mask_plastic = abs(y) >= abs(cutoff)
-                plt.plot(x[mask_elastic], y[mask_elastic], linestyle=linestyle, color='b', label=f"label")
-                plt.plot(x [mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
+                pass
+                # mask_elastic = abs(y) < abs(cutoff)
+                # mask_plastic = abs(y) >= abs(cutoff)
+                # plt.plot(x[mask_elastic], y[mask_elastic], linestyle=linestyle, color=color, label=f"label")
+                # plt.plot(x [mask_plastic], y[mask_plastic], linestyle=linestyle, color='orange', label=label)
             else:
+                if label == "":
+                    label = None
                 plt.plot(x, y, linestyle=linestyle, color=color, label=label)
-                ax.annotate(f'{y[-1]:.4g}', xy=(x[-1], y[-1]), xytext=(x[-1], y[-1]*0.92), textcoords='data',
-                            fontsize=8,  # Adjust font size
-                            bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
-                            arrowprops=dict(facecolor='black', shrink=0.05, headwidth=5, headlength=5, width=0.5))
+                if large_markers:
+                    plt.scatter(x, y, color=color, marker='x')
+                else:
+                    plt.scatter(x, y, color=color, marker='x', s = 3)
+                if annotate_last_datapoint:
+                    ax.annotate(f'{y[-1]:.4g}', xy=(x[-1], y[-1]), xytext=(x[-1], y[-1]*0.92), textcoords='data',
+                                fontsize=8,  # Adjust font size
+                                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+                                arrowprops=dict(facecolor='black', shrink=0.05, headwidth=5, headlength=5, width=0.5))
+                # elif annotate_all_datapoints:
+                #     for i in range(len(x)):
+                #         ax.annotate(f'{len:.4g}', xy=(x[i], y[i]), xytext=(x[i], y[i]*0.92), textcoords='data',
+                #                     fontsize=8,  # Adjust font size
+                #                     bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+                #                     arrowprops=dict(facecolor='black', shrink=0.05, headwidth=5, headlength=5, width=0.5))
             max_x = max(max_x, max(x))
             max_y = max(max_y, max(y))
             min_x = min(min_x, min(x))
@@ -335,16 +350,53 @@ def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_throu
             ax.set_ylim(top=0)
         elif min_y > 0:
             ax.set_ylim(bottom=0)
+        
+    if vertical_axis == "right":
+        ax.yaxis.set_label_position("right")
+        ax.yaxis.tick_right()
+        plt.gca().spines['right'].set_visible(True)
+        plt.gca().spines['left'].set_visible(False)
+        ax.spines['right'].set_position('zero')
+        ax.set_xlim(right=max_x)
+    else:
+        plt.gca().spines['right'].set_visible(False)
+        plt.gca().spines['left'].set_visible(True)
+        
+    if horizontal_axis == "top":
+        ax.xaxis.set_label_position("top")
+        ax.xaxis.tick_top()
+        plt.gca().spines['top'].set_visible(True)
+        plt.gca().spines['bottom'].set_visible(False)
+        ax.spines['top'].set_position('zero')
+    else:
+        plt.gca().spines['top'].set_visible(False)
+        plt.gca().spines['bottom'].set_visible(True)    
     
+    if not vertical_axis == "right" and not horizontal_axis == "top":
+        plt.axvline(0, color='black', linewidth=0.5)
+        plt.axhline(0, color='black', linewidth=0.5)
+    elif vertical_axis == "right" and horizontal_axis == "top":
+        plt.axvline(0, color='black', linewidth=2)
+        plt.axhline(0, color='black', linewidth=2)
+    
+    if scale_up > 1:
+        ax.set_ylim([min_y * scale_up, max_y * scale_up])
+    # ax.set_xlim(left=-5)
     # Add axis labels and title
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    ax.set_title(title)
-    # ax.legend()
-
-    ax.grid(True)
+    if x_log_scale == True:
+        ax.set_xscale('log')
+    if y_log_scale == True:
+        ax.set_yscale('log')
+    if not title == "":
+        ax.set_title(title)
+    # print(data[0][2])
+    if not data[0][2] in ["", None]:
+        ax.legend(handlelength=0, handletextpad=0)
+    ax.grid(False)
     if save_as:
-        plt.savefig(save_as)
+        plt.savefig(save_as,transparent=True)
         if not show:
             plt.close()
         return save_as
@@ -357,11 +409,11 @@ def plot_sig_eq_vs_e_zz(sig_eq, e_zz, save_as: str =None):
 
 
 
-def plot_x_ys(x_array: list, y_arrays, labels: list, colors: list | None = None, cutoffs=None, x_label="", y_label="", title="", save_as: str = None, show=False, enforce_pass_through_zero=False,annotate_last_datapoint=False):
+def plot_x_ys(x_array: list, y_arrays, labels: list, colors: list | None = None, cutoffs=None, x_label="", y_label="", title="", save_as: str = None, show=False, enforce_pass_through_zero=False, annotate_all_datapoints=False, annotate_last_datapoint=False, large_markers=False,vertical_axis="left", horizontal_axis="bottom", scale_up=1, x_log_scale=False, y_log_scale=False):
     data = []
     for i in range(len(y_arrays)):
         data.append((x_array, y_arrays[i], labels[i], colors[i] if colors else None, None))
-    return create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero,annotate_last_datapoint)
+    return create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_through_zero,annotate_all_datapoints,annotate_last_datapoint,large_markers,vertical_axis, horizontal_axis, scale_up, x_log_scale, y_log_scale)
 
 def init_axes_3d():
     fig = plt.figure()

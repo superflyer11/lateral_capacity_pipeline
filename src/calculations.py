@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 # Function to calculate principal stresses and directions
 # def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz):
@@ -44,11 +45,11 @@ def calculate_principal_stresses(sig_xx, sig_yy, sig_zz, sig_xy, sig_xz, sig_yz)
             [sig_xy[i], sig_yy[i], sig_yz[i]],
             [sig_xz[i], sig_yz[i], sig_zz[i]]
         ])
-        
 
         # Check for invalid values
         if not np.isfinite(stress_tensor).all():
-            raise ValueError(f"Invalid values in stress tensor: {stress_tensor}")
+            warnings.warn(f"Invalid values in stress tensor: {stress_tensor}")
+            return sig_xx[i], sig_yy[i], sig_zz[i]
 
         # Ensure tensor symmetry
         if not np.allclose(stress_tensor, stress_tensor.T, atol=1e-8):

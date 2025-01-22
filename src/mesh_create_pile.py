@@ -221,15 +221,15 @@ def generate_physical_groups_manual(params, geo: cm.ManualGeometryTagManager) ->
     ))  # LEFT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=geo.FIX_X_0, name="FIX_X_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=None,disp_uz=None)
     ))  # RIGHT FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=geo.FIX_Z_0, name="FIX_Z_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=None,disp_uz=0)
     ))  # BOTTOM FACE OF SOIL
     physical_groups.append(cm.PhysicalGroup(
         dim=2, tags=geo.FIX_Y_0, name="FIX_Y_0",
-        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=0,disp_uy=0,disp_uz=0)
+        group_type=cm.PhysicalGroupType.BOUNDARY_CONDITION, bc=cm.SurfaceBoundaryCondition(disp_ux=None,disp_uy=0,disp_uz=None)
     ))  # BACK AND FRONT FACE OF SOIL
     
     if getattr(params, 'prescribed_force', None):
@@ -643,12 +643,12 @@ def finalize_mesh(params, geo, physical_groups, physical_groups_dimTags):
         gmsh.option.setNumber('Mesh.Algorithm3D', 10)
         # gmsh.option.setNumber('Mesh.SecondOrderIncomplete', 1)
         # gmsh.option.setNumber('Mesh.',  1)
-        gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 3)
-        gmsh.option.setNumber('Mesh.RecombineAll', 1)
-        gmsh.option.setNumber('Mesh.Recombine3DAll', 1)
-        gmsh.option.setNumber('Mesh.Recombine3DLevel', 0)
-        gmsh.option.setNumber('Mesh.RecombineOptimizeTopology', 10)
-        gmsh.option.setNumber('Mesh.RecombineMinimumQuality', 0.1)
+        # gmsh.option.setNumber('Mesh.RecombinationAlgorithm', 3)
+        # gmsh.option.setNumber('Mesh.RecombineAll', 1)
+        # gmsh.option.setNumber('Mesh.Recombine3DAll', 1)
+        # gmsh.option.setNumber('Mesh.Recombine3DLevel', 0)
+        # gmsh.option.setNumber('Mesh.RecombineOptimizeTopology', 10)
+        # gmsh.option.setNumber('Mesh.RecombineMinimumQuality', 0.1)
         tolerance = 1e-5
         list_of_flat_surface_z = [params.cylinder_manager.z]
         # Calculate cumulative depths of each layer to determine flat surface z-values
@@ -741,15 +741,15 @@ def finalize_mesh(params, geo, physical_groups, physical_groups_dimTags):
             #     continue
             gmsh.model.mesh.setTransfiniteSurface(tag)
             
-        # sys.exit()
-        volumes = gmsh.model.getEntities(3)
-        for _, tag in volumes:
-            _, surfaceTags = gmsh.model.occ.getSurfaceLoops(tag)
-            # if any(surface in surfaceTags[0] for surface in interior_soil_horizontal_surfaces):
-            #     continue
-            gmsh.model.mesh.setTransfiniteVolume(tag)
+        # # sys.exit()
+        # volumes = gmsh.model.getEntities(3)
+        # for _, tag in volumes:
+        #     _, surfaceTags = gmsh.model.occ.getSurfaceLoops(tag)
+        #     # if any(surface in surfaceTags[0] for surface in interior_soil_horizontal_surfaces):
+        #     #     continue
+        #     gmsh.model.mesh.setTransfiniteVolume(tag)
         
-        gmsh.model.mesh.recombine()
+        # gmsh.model.mesh.recombine()
         gmsh.model.mesh.generate(3)
         gmsh.write(params.med_filepath.as_posix())
         return physical_groups
