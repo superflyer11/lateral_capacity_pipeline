@@ -134,7 +134,7 @@ def mofem_compute(params):
                 mi_param_5 = physical_group.props[physical_group.preferred_model].mi_param_5
         
                 mfront_arguments.append(
-                    f"-mi_lib_path_{mfront_block_id} /mofem_install/jupyter/thomas/mfront_interface/src/libBehaviour.so "
+                    f"-mi_lib_path_{mfront_block_id} /mofem_install/jupyter/thomas/mfront_modules/src/libBehaviour.so "
                     f"-mi_block_{mfront_block_id} {mi_block} "
                     f"-mi_param_{mfront_block_id}_0 {mi_param_0} "
                     f"-mi_param_{mfront_block_id}_1 {mi_param_1} "

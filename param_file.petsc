@@ -29,7 +29,7 @@
 #-ts_theta_initial_guess_extrapolate 1
 #-ts_theta_theta 1
 
--ts_max_steps 500
+-ts_max_steps 2000
 -ts_exact_final_time matchstep
 -ts_max_snes_failures 2
 #-ts_error_if_step_fails false

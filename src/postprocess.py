@@ -358,6 +358,8 @@ def calculate(params):
             J  = np.sqrt(J_2)
             tau_oct = np.sqrt(2 * J_2)
             df["SIG_eq"] = np.sqrt(3 * J_2)
+            df["signed_SIG_eq"] = np.sign(df['sig_zz']-df['sig_xx']) * df["SIG_eq"]
+            
             
             # Check if 'GRAD' columns exist and 'STRAIN' columns do not exist
             if all(f'GRAD_{i}' in df.columns for i in range(9)) and not any(f'STRAIN_{i}' in df.columns for i in [0, 1, 2, 4, 5, 8]):
@@ -468,7 +470,7 @@ def plot_stress_3D(params):
                         latex: '0 = q - s_{{0}}',
                         color: Desmos.Colors.RED,
                     }});"""
-            elif params.soil_model == cm.PropertyTypeEnum.DP_HYPER or params.soil_model == cm.PropertyTypeEnum.DP:
+            elif params.soil_model == cm.PropertyTypeEnum.DP_HYPER_Implicit_mfront or params.soil_model == cm.PropertyTypeEnum.DP_Implicit_mfront:
                 c = 10
                 # a = 1e-16
                 phi = 15 * math.pi / 180
@@ -670,8 +672,15 @@ $E = {500}$
 $\\nu = {0.3}$
 $\\sigma_y$ = {0.25}
 H = {2.5}"""
-                elif params.soil_model == cm.PropertyTypeEnum.DP:
+                elif params.soil_model == cm.PropertyTypeEnum.DP_Implicit_mfront:
                     label = r"""Drucker-Prager (MFront Implicit DSL) - FEA
+$E = 500$
+$\nu = 0.3$
+$\phi = 10\degree$
+c = 0.125
+$v = 0\degree$"""
+                elif params.soil_model == cm.PropertyTypeEnum.DP_HYPER_Implicit_mfront:
+                    label = r"""Drucker-Prager Hyperboloidal Fit (MFront Implicit DSL) - FEA
 $E = 500$
 $\nu = 0.3$
 $\phi = 10\degree$

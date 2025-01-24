@@ -396,7 +396,7 @@ def create_plot(data, x_label, y_label, title, save_as, show, enforce_pass_throu
         ax.legend(handlelength=0, handletextpad=0)
     ax.grid(False)
     if save_as:
-        plt.savefig(save_as,transparent=True)
+        plt.savefig(save_as,transparent=False)
         if not show:
             plt.close()
         return save_as

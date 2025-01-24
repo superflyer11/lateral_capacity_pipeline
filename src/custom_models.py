@@ -180,8 +180,8 @@ class PropertyTypeEnum(str, Enum):
     vM_Implicit_mfront = "vM" #tested to be have the similar convergence as mfront gallery implementation
     vM_adolc = "vM_adolc" 
     Hm_adolc = "Hm_adolc" 
-    DP = "DruckerPragerNonAssociated" 
-    DP_HYPER = "DruckerPragerHyperboloidal"
+    DP_Implicit_mfront = "DruckerPragerNonAssociated" 
+    DP_HYPER_Implicit_mfront = "DruckerPragerHyperboloidal"
     MCC = "ModCamClay_semiExpl" # none of them is working so far
 
 class BulkAnalysisProps(BaseModel):
@@ -223,6 +223,8 @@ class MaterialProperty(BaseModel):
     # model_config = ConfigDict(extra='allow') 
     # def model_dump(self):
     #     return self.dict()
+    
+    
     
 class ElasticProperties(MaterialProperty):
     youngs_modulus: float
